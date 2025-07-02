@@ -1,0 +1,34 @@
+{
+  "name": "git-cleanup-merged",
+  "version": "1.0.0",
+  "description": "Clean up local Git branches that have merged PRs on GitHub",
+  "main": "index.js",
+  "bin": {
+    "git-cleanup-merged": "./src/index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "git",
+    "github",
+    "cli",
+    "cleanup",
+    "branches",
+    "merge"
+  ],
+  "author": "Chris Ondrovic",
+  "license": "MIT",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "preferGlobal": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/git-cleanup-merged.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/git-cleanup-merged/issues"
+  },
+  "homepage": "https://github.com/yourusername/git-cleanup-merged#readme"
+}
