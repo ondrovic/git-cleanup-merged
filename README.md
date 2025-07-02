@@ -263,7 +263,7 @@ MIT License - see LICENSE file for details.
 
 - 🐛 **Bug Reports**: [GitHub Issues](https://github.com/ondrovic/git-cleanup-merged/issues)
 - 💡 **Feature Requests**: [GitHub Discussions](https://github.com/ondrovic/git-cleanup-merged/discussions)
-- 📧 **Contact**: your.email@example.com
+- 📧 **Contact**: ondrovic@gmail.com
 
 ---
 
