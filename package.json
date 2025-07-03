@@ -48,6 +48,15 @@
         "branches": 75
       }
     },
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/bin.js"
+    ],
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ],
     "reporters": [
       "default",
       [
