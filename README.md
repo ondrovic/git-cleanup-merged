@@ -9,7 +9,7 @@ A Node.js command-line tool that automatically identifies and deletes local Git 
 
 ## 🧪 Testing & Quality Assurance
 
-- [![CI](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml/badge.svg)](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml) **CI runs on every branch and every pull request** via GitHub Actions
+- [![CI](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml/badge.svg)](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml) **CI runs on every branch and every pull request** via GitHub Actions (tests Node.js 16.x, 18.x, 20.x)
 - [![codecov](https://codecov.io/gh/ondrovic/git-cleanup-merged/graph/badge.svg?token=x3cYga3d2E)](https://codecov.io/gh/ondrovic/git-cleanup-merged) **Live coverage tracking** via Codecov
 - 🚦 **Branch coverage threshold:** CI will fail if branch coverage drops below 75%
 - 🧪 **Run tests locally:**
@@ -40,7 +40,7 @@ A Node.js command-line tool that automatically identifies and deletes local Git 
 
 Before installing, make sure you have:
 
-- **Node.js** (version 14 or higher)
+- **Node.js** (version 16 or higher - tested on 16.x, 18.x, and 20.x)
 - **Git** installed and configured
 - **GitHub CLI** (`gh`) installed and authenticated
 - Active internet connection for GitHub API calls
@@ -255,12 +255,13 @@ git-cleanup-merged/
 │   ├── spinner.test.js     # Spinner component tests
 │   └── utils.test.js       # Utility function tests
 ├── coverage/               # Coverage reports (generated)
-├── src/                    # Source code
+
+├── src/
+│   ├── bin.js              # CLI entry point
 │   ├── index.js            # Main GitCleanupTool class
 │   └── utils/
 │       ├── index.js        # Utility functions
 │       └── spinner.js      # Spinner component
-├── bin.js                  # CLI entry point
 ├── package.json
 ├── package-lock.json
 ├── .eslintrc.js           # ESLint configuration
@@ -296,7 +297,7 @@ npm run test:coverage
 npm run lint
 
 # Run linting with auto-fix
-npm run lint:fix
+npm run lint -- --fix
 
 # Format code
 npm run format
