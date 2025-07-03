@@ -9,6 +9,7 @@
   "scripts": {
     "test": "jest",
     "test:coverage": "jest --coverage",
+    "test:coverage:ci": "jest --coverage && node -e \"const fs=require('fs');const xml=fs.readFileSync('coverage/junit.xml','utf8');fs.writeFileSync('coverage/junit.xml',xml.replace(/\\\\/g,'/'));\"",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
@@ -67,7 +68,9 @@
           "classNameTemplate": "{filepath}",
           "titleTemplate": "{title}",
           "ancestorSeparator": " › ",
-          "usePathForSuiteName": true
+          "usePathForSuiteName": true,
+          "useFullFilePath": true,
+          "classNameTemplate": "{filepath}"
         }
       ]
     ]
