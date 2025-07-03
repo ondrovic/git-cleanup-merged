@@ -9,9 +9,11 @@ A Node.js command-line tool that automatically identifies and deletes local Git 
 
 ## 🧪 Testing & Quality Assurance
 
-- [![CI](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml/badge.svg)](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml) **CI runs on every branch and every pull request** via GitHub Actions
+- [![CI](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml/badge.svg)](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml) **CI runs on all pull requests and on push to `main`/`master` only** via GitHub Actions (tests Node.js 18.x, 20.x)
+  - This avoids duplicate runs for feature branches and is the recommended best practice for open source projects.
 - [![codecov](https://codecov.io/gh/ondrovic/git-cleanup-merged/graph/badge.svg?token=x3cYga3d2E)](https://codecov.io/gh/ondrovic/git-cleanup-merged) **Live coverage tracking** via Codecov
 - 🚦 **Branch coverage threshold:** CI will fail if branch coverage drops below 75%
+- 📝 **JUnit test results and coverage are uploaded to Codecov for every CI run**
 - 🧪 **Run tests locally:**
   ```bash
   npm test
@@ -40,7 +42,7 @@ A Node.js command-line tool that automatically identifies and deletes local Git 
 
 Before installing, make sure you have:
 
-- **Node.js** (version 14 or higher)
+- **Node.js** (version 18 or higher - tested on 18.x and 20.x)
 - **Git** installed and configured
 - **GitHub CLI** (`gh`) installed and authenticated
 - Active internet connection for GitHub API calls
@@ -255,15 +257,16 @@ git-cleanup-merged/
 │   ├── spinner.test.js     # Spinner component tests
 │   └── utils.test.js       # Utility function tests
 ├── coverage/               # Coverage reports (generated)
-├── src/                    # Source code
+
+├── src/
+│   ├── bin.js              # CLI entry point
 │   ├── index.js            # Main GitCleanupTool class
 │   └── utils/
 │       ├── index.js        # Utility functions
 │       └── spinner.js      # Spinner component
-├── bin.js                  # CLI entry point
 ├── package.json
 ├── package-lock.json
-├── .eslintrc.js           # ESLint configuration
+├── eslint.config.mjs      # ESLint configuration
 ├── .prettierrc            # Prettier configuration
 └── README.md
 ```
@@ -296,7 +299,7 @@ npm run test:coverage
 npm run lint
 
 # Run linting with auto-fix
-npm run lint:fix
+npm run lint -- --fix
 
 # Format code
 npm run format
@@ -307,6 +310,13 @@ npm run format
 MIT License - see LICENSE file for details.
 
 ## 📋 Changelog
+
+### v1.2.1
+
+- 🔧 **Node.js Compatibility**: Updated to require Node.js 18+ for ESLint 9.x compatibility
+- 🧪 **CI Updates**: Removed Node.js 16.x from CI matrix (reached end-of-life)
+- 📦 **Dependencies**: Updated to use modern ESLint flat config format
+- 🚦 **Workflow Optimization**: CI now only runs on pull requests and on push to `main`/`master` to avoid duplicate runs for feature branches
 
 ### v1.2.0
 
