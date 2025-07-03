@@ -604,7 +604,7 @@ describe("GitCleanupTool", () => {
       const result = tool.parseArguments();
 
       expect(tool.showHelp).toHaveBeenCalled();
-      expect(result).toBeUndefined();
+      expect(result).toBe(0);
     });
 
     it("should show help and return undefined for help short flag", () => {
@@ -613,7 +613,7 @@ describe("GitCleanupTool", () => {
       const result = tool.parseArguments();
 
       expect(tool.showHelp).toHaveBeenCalled();
-      expect(result).toBeUndefined();
+      expect(result).toBe(0);
     });
 
     it("should explicitly cover return for help", () => {
@@ -621,14 +621,14 @@ describe("GitCleanupTool", () => {
       tool.showHelp = jest.fn();
       const result = tool.parseArguments();
       expect(tool.showHelp).toHaveBeenCalled();
-      expect(result).toBeUndefined();
+      expect(result).toBe(0);
     });
     it("should explicitly cover return for -h", () => {
       process.argv = ["node", "script.js", "-h"];
       tool.showHelp = jest.fn();
       const result = tool.parseArguments();
       expect(tool.showHelp).toHaveBeenCalled();
-      expect(result).toBeUndefined();
+      expect(result).toBe(0);
     });
 
     it("should handle unknown option", () => {

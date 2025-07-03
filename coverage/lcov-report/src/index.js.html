@@ -439,7 +439,10 @@
 <a name='L378'></a><a href='#L378'>378</a>
 <a name='L379'></a><a href='#L379'>379</a>
 <a name='L380'></a><a href='#L380'>380</a>
-<a name='L381'></a><a href='#L381'>381</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L381'></a><a href='#L381'>381</a>
+<a name='L382'></a><a href='#L382'>382</a>
+<a name='L383'></a><a href='#L383'>383</a>
+<a name='L384'></a><a href='#L384'>384</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -804,6 +807,9 @@
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
@@ -825,7 +831,7 @@ const { execSync } = require("child_process");
 const readline = require("readline");
 const clearTerminal = require("./utils");
 const Spinner = require("./utils/spinner");
-const path = require('path');
+const path = require("path");
 &nbsp;
 // Colors for terminal output
 const colors = {
@@ -1171,7 +1177,7 @@ ${colors.bold}EXAMPLES:${colors.reset}
         case "--help":
         case "-h":
           this.showHelp();
-          return;
+          return 0;
         default:
           this.spinner.error(`Unknown option: ${arg}`);
           this.spinner.info("Use --help for usage information.");
@@ -1183,7 +1189,10 @@ ${colors.bold}EXAMPLES:${colors.reset}
   async run() {
     clearTerminal();
     // Display just the directory name being scanned
-    this.spinner.log(`📂 Scanning repository: ${path.basename(process.cwd())}`, "\x1b[34m");
+    this.spinner.log(
+      `📂 Scanning repository: ${path.basename(process.cwd())}`,
+      "\x1b[34m",
+    );
     try {
       this.parseArguments();
       await this.checkDependencies();
@@ -1213,7 +1222,7 @@ module.exports = GitCleanupTool;
         rel="noopener noreferrer"
         >istanbul</a
       >
-      at 2025-07-03T21:33:21.499Z
+      at 2025-07-03T21:50:27.568Z
     </div>
     <script src="../prettify.js"></script>
     <script>
