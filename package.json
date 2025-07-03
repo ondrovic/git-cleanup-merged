@@ -4,10 +4,13 @@
   "description": "Clean up local Git branches that have merged PRs on GitHub",
   "main": "index.js",
   "bin": {
-    "git-cleanup-merged": "./src/index.js"
+    "git-cleanup-merged": "./src/bin.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint .",
+    "format": "prettier --write ."
   },
   "keywords": [
     "git",
@@ -25,10 +28,24 @@
   "preferGlobal": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/git-cleanup-merged.git"
+    "url": "https://github.com/ondro/git-cleanup-merged.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/git-cleanup-merged/issues"
+    "url": "https://github.com/ondro/git-cleanup-merged/issues"
   },
-  "homepage": "https://github.com/yourusername/git-cleanup-merged#readme"
+  "homepage": "https://github.com/ondro/git-cleanup-merged#readme",
+  "devDependencies": {
+    "@eslint/js": "^9.30.1",
+    "eslint": "^9.30.1",
+    "globals": "^16.3.0",
+    "jest": "^30.0.3",
+    "prettier": "^3.6.2"
+  },
+  "jest": {
+    "coverageThreshold": {
+      "global": {
+        "branches": 75
+      }
+    }
+  }
 }
