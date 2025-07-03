@@ -1,7 +1,7 @@
 # Git Cleanup Merged
 
-[![CI](https://github.com/ondro/git-cleanup-merged/actions/workflows/ci.yml/badge.svg)](https://github.com/ondro/git-cleanup-merged/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/ondro/git-cleanup-merged/branch/main/graph/badge.svg)](https://codecov.io/gh/ondro/git-cleanup-merged)
+[![CI](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml/badge.svg)](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/ondrovic/git-cleanup-merged/graph/badge.svg?token=x3cYga3d2E)](https://codecov.io/gh/ondrovic/git-cleanup-merged)
 
 A Node.js command-line tool that automatically identifies and deletes local Git branches that have been merged via GitHub Pull Requests.
 
@@ -9,8 +9,8 @@ A Node.js command-line tool that automatically identifies and deletes local Git 
 
 ## 🧪 Testing & Quality Assurance
 
-- ![CI Status](https://github.com/ondro/git-cleanup-merged/actions/workflows/ci.yml/badge.svg) **CI runs on every branch and every pull request** via GitHub Actions
-- ![codecov](https://codecov.io/gh/ondro/git-cleanup-merged/branch/main/graph/badge.svg) **Live coverage tracking** via Codecov
+- [![CI](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml/badge.svg)](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml) **CI runs on every branch and every pull request** via GitHub Actions
+- [![codecov](https://codecov.io/gh/ondrovic/git-cleanup-merged/graph/badge.svg?token=x3cYga3d2E)](https://codecov.io/gh/ondrovic/git-cleanup-merged) **Live coverage tracking** via Codecov
 - 🚦 **Branch coverage threshold:** CI will fail if branch coverage drops below 75%
 - 🧪 **Run tests locally:**
   ```bash

@@ -350,7 +350,7 @@ ${colors.bold}EXAMPLES:${colors.reset}
         case "--help":
         case "-h":
           this.showHelp();
-          return;
+          return 0;
         default:
           this.spinner.error(`Unknown option: ${arg}`);
           this.spinner.info("Use --help for usage information.");

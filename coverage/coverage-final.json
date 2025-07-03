@@ -592,7 +592,7 @@
       },
       "147": {
         "start": { "line": 353, "column": 10 },
-        "end": { "line": 353, "column": 17 }
+        "end": { "line": 353, "column": 19 }
       },
       "148": {
         "start": { "line": 355, "column": 10 },
@@ -612,47 +612,47 @@
       },
       "152": {
         "start": { "line": 365, "column": 4 },
-        "end": { "line": 365, "column": 92 }
+        "end": { "line": 368, "column": 6 }
       },
       "153": {
-        "start": { "line": 366, "column": 4 },
-        "end": { "line": 376, "column": 5 }
+        "start": { "line": 369, "column": 4 },
+        "end": { "line": 379, "column": 5 }
       },
       "154": {
-        "start": { "line": 367, "column": 6 },
-        "end": { "line": 367, "column": 28 }
+        "start": { "line": 370, "column": 6 },
+        "end": { "line": 370, "column": 28 }
       },
       "155": {
-        "start": { "line": 368, "column": 6 },
-        "end": { "line": 368, "column": 37 }
+        "start": { "line": 371, "column": 6 },
+        "end": { "line": 371, "column": 37 }
       },
       "156": {
-        "start": { "line": 369, "column": 6 },
-        "end": { "line": 369, "column": 36 }
+        "start": { "line": 372, "column": 6 },
+        "end": { "line": 372, "column": 36 }
       },
       "157": {
-        "start": { "line": 370, "column": 6 },
-        "end": { "line": 370, "column": 33 }
+        "start": { "line": 373, "column": 6 },
+        "end": { "line": 373, "column": 33 }
       },
       "158": {
-        "start": { "line": 371, "column": 6 },
-        "end": { "line": 371, "column": 28 }
+        "start": { "line": 374, "column": 6 },
+        "end": { "line": 374, "column": 28 }
       },
       "159": {
-        "start": { "line": 372, "column": 6 },
-        "end": { "line": 372, "column": 34 }
+        "start": { "line": 375, "column": 6 },
+        "end": { "line": 375, "column": 34 }
       },
       "160": {
-        "start": { "line": 374, "column": 6 },
-        "end": { "line": 374, "column": 64 }
+        "start": { "line": 377, "column": 6 },
+        "end": { "line": 377, "column": 64 }
       },
       "161": {
-        "start": { "line": 375, "column": 6 },
-        "end": { "line": 375, "column": 22 }
+        "start": { "line": 378, "column": 6 },
+        "end": { "line": 378, "column": 22 }
       },
       "162": {
-        "start": { "line": 380, "column": 0 },
-        "end": { "line": 380, "column": 32 }
+        "start": { "line": 383, "column": 0 },
+        "end": { "line": 383, "column": 32 }
       }
     },
     "fnMap": {
@@ -928,7 +928,7 @@
         },
         "loc": {
           "start": { "line": 362, "column": 14 },
-          "end": { "line": 377, "column": 3 }
+          "end": { "line": 380, "column": 3 }
         },
         "line": 362
       }
@@ -1260,7 +1260,7 @@
           },
           {
             "start": { "line": 351, "column": 8 },
-            "end": { "line": 353, "column": 17 }
+            "end": { "line": 353, "column": 19 }
           },
           {
             "start": { "line": 354, "column": 8 },
@@ -1482,7 +1482,7 @@
       "18": [4, 5, 1, 2, 2, 4, 1]
     },
     "_coverageSchema": "1a1c01bbd47fc00a2c39e90264f33305004495a9",
-    "hash": "72cf2ecc6f8828620c43b07eb2d32e44b195c794"
+    "hash": "50a88df877c4dedc7f65e9fa06824ae6b44f21c6"
   },
   "C:\\Users\\ondro\\source\\repos\\JS\\git-local-branch-cleanup\\src\\utils\\index.js": {
     "path": "C:\\Users\\ondro\\source\\repos\\JS\\git-local-branch-cleanup\\src\\utils\\index.js",
