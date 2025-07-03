@@ -12,6 +12,7 @@ A Node.js command-line tool that automatically identifies and deletes local Git 
 - [![CI](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml/badge.svg)](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml) **CI runs on every branch and every pull request** via GitHub Actions (tests Node.js 16.x, 18.x, 20.x)
 - [![codecov](https://codecov.io/gh/ondrovic/git-cleanup-merged/graph/badge.svg?token=x3cYga3d2E)](https://codecov.io/gh/ondrovic/git-cleanup-merged) **Live coverage tracking** via Codecov
 - 🚦 **Branch coverage threshold:** CI will fail if branch coverage drops below 75%
+- 📝 **JUnit test results and coverage are uploaded to Codecov for every CI run**
 - 🧪 **Run tests locally:**
   ```bash
   npm test
