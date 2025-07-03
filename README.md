@@ -1,16 +1,40 @@
 # Git Cleanup Merged
 
+[![CI](https://github.com/ondro/git-cleanup-merged/actions/workflows/ci.yml/badge.svg)](https://github.com/ondro/git-cleanup-merged/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/ondro/git-cleanup-merged/branch/main/graph/badge.svg)](https://codecov.io/gh/ondro/git-cleanup-merged)
+
 A Node.js command-line tool that automatically identifies and deletes local Git branches that have been merged via GitHub Pull Requests.
 
-## Features
+---
+
+## 🧪 Testing & Quality Assurance
+
+- ![CI Status](https://github.com/ondro/git-cleanup-merged/actions/workflows/ci.yml/badge.svg) **CI runs on every branch and every pull request** via GitHub Actions
+- ![codecov](https://codecov.io/gh/ondro/git-cleanup-merged/branch/main/graph/badge.svg) **Live coverage tracking** via Codecov
+- 🚦 **Branch coverage threshold:** CI will fail if branch coverage drops below 75%
+- 🧪 **Run tests locally:**
+  ```bash
+  npm test
+  npm run test:coverage
+  ```
+- 📈 **Check coverage report:**
+  After running `npm run test:coverage`, open `coverage/lcov-report/index.html` in your browser for a detailed report.
+- 🔍 **Code quality:** ESLint and Prettier configured for consistent code style
+
+---
+
+## ✨ Features
 
 - 🔍 **Smart Detection**: Automatically checks GitHub PR status for all local branches
 - ✅ **Safe Deletion**: Only deletes branches with merged PRs
 - 🔒 **Protection**: Never deletes `main`, `master`, or your current branch
 - 👀 **Preview Mode**: Dry-run option to see what would be deleted
+- 📂 **Directory Support**: Operate on any git repo by passing a directory as the first argument
 - 🎨 **Colorful Output**: Clear visual indicators with icons and colors
 - 📊 **Status Overview**: Shows comprehensive branch status table
 - ⚡ **Interactive Spinner**: Real-time progress updates with animated spinner
+- 🛡️ **Comprehensive Testing**: 100% test coverage with 76 test cases and live coverage tracking
+- 🎯 **Code Quality**: ESLint and Prettier for consistent code style
 
 ## Prerequisites
 
@@ -26,16 +50,19 @@ Before installing, make sure you have:
 If you don't have GitHub CLI installed:
 
 **macOS (Homebrew):**
+
 ```bash
 brew install gh
 ```
 
 **Windows (Chocolatey):**
+
 ```bash
 choco install gh
 ```
 
 **Linux (Ubuntu/Debian):**
+
 ```bash
 curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
@@ -44,6 +71,7 @@ sudo apt install gh
 ```
 
 **Authenticate GitHub CLI:**
+
 ```bash
 gh auth login
 ```
@@ -57,14 +85,14 @@ gh auth login
 npm install -g git-cleanup-merged
 
 # Or install globally from GitHub
-npm install -g https://github.com/yourusername/git-cleanup-merged.git
+npm install -g https://github.com/ondro/git-cleanup-merged.git
 ```
 
 ### Option 2: Local Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/git-cleanup-merged.git
+git clone https://github.com/ondro/git-cleanup-merged.git
 cd git-cleanup-merged
 
 # Install dependencies
@@ -81,10 +109,10 @@ npm link
 
 ```bash
 # Download the script directly
-curl -o git-cleanup-merged https://raw.githubusercontent.com/yourusername/git-cleanup-merged/main/index.js
+curl -o git-cleanup-merged https://raw.githubusercontent.com/ondro/git-cleanup-merged/main/index.js
 chmod +x git-cleanup-merged
 
-# Move to your PATH  
+# Move to your PATH
 sudo mv git-cleanup-merged /usr/local/bin/
 ```
 
@@ -95,16 +123,21 @@ sudo mv git-cleanup-merged /usr/local/bin/
 npx git-cleanup-merged
 
 # Or from GitHub
-npx https://github.com/yourusername/git-cleanup-merged.git
+npx https://github.com/ondro/git-cleanup-merged.git
 ```
 
 ## Usage
 
 ### Basic Usage
 
+> **Note:** At the start of every run, the tool will display the name of the repository directory being scanned (e.g. 'git-local-branch-cleanup' or 'ollama-git-commit'), so you always know which directory is being operated on.
+
 ```bash
 # Clean up merged branches (with confirmation)
 git-cleanup-merged
+
+# Clean up merged branches in a different directory
+git-cleanup-merged ../path/to/repo
 
 # Preview what would be deleted (dry run)
 git-cleanup-merged --dry-run
@@ -113,16 +146,17 @@ git-cleanup-merged --dry-run
 git-cleanup-merged --verbose
 
 # Combine options
-git-cleanup-merged --dry-run --verbose
+git-cleanup-merged ../path/to/repo --dry-run --verbose
 ```
 
 ### Command Line Options
 
-| Option | Short | Description |
-|--------|-------|-------------|
-| `--dry-run` | `-n` | Show what would be deleted without actually deleting |
-| `--verbose` | `-v` | Show detailed information during processing |
-| `--help` | `-h` | Show help message |
+| Option        | Short | Description                                                                          |
+| ------------- | ----- | ------------------------------------------------------------------------------------ |
+| `[DIRECTORY]` |       | Path to a git repository to operate on. Defaults to the current directory if omitted |
+| `--dry-run`   | `-n`  | Show what would be deleted without actually deleting                                 |
+| `--verbose`   | `-v`  | Show detailed information during processing                                          |
+| `--help`      | `-h`  | Show help message                                                                    |
 
 ### Example Output
 
@@ -134,12 +168,12 @@ git-cleanup-merged --dry-run --verbose
 ✅ Finished checking 5 branches
 
 ────────────────────────────────────────────────────────────
-Branch                                   Icon   Status    
+Branch                                   Icon   Status
 ────────────────────────────────────────────────────────────
-feature/user-authentication              ✅     Merged    
-bugfix/header-layout                     ✅     Merged    
-feature/dark-mode                        ⏳     Open      
-hotfix/critical-bug                      ❌     No PR     
+feature/user-authentication              ✅     Merged
+bugfix/header-layout                     ✅     Merged
+feature/dark-mode                        ⏳     Open
+hotfix/critical-bug                      ❌     No PR
 ────────────────────────────────────────────────────────────
 
 ❌ The following branches have merged PRs and will be deleted:
@@ -164,11 +198,11 @@ Proceed with deletion? (y/N): y
 
 ## Branch Status Indicators
 
-| Icon | Status | Description |
-|------|--------|-------------|
-| ✅ | Merged | PR has been merged - branch is safe to delete |
-| ⏳ | Open | PR is still open - branch will be preserved |
-| ❌ | No PR | No PR found for this branch - branch will be preserved |
+| Icon | Status | Description                                            |
+| ---- | ------ | ------------------------------------------------------ |
+| ✅   | Merged | PR has been merged - branch is safe to delete          |
+| ⏳   | Open   | PR is still open - branch will be preserved            |
+| ❌   | No PR  | No PR found for this branch - branch will be preserved |
 
 ## Safety Features
 
@@ -183,18 +217,23 @@ Proceed with deletion? (y/N): y
 ### Common Issues
 
 **"Not in a git repository"**
+
 - Make sure you're running the command from within a Git repository
 
 **"GitHub CLI (gh) is not installed"**
+
 - Install GitHub CLI following the prerequisites section above
 
 **"GitHub CLI is not authenticated"**
+
 - Run `gh auth login` and follow the authentication process
 
 **"Failed to get current branch"**
+
 - Ensure you're in a valid Git repository with at least one commit
 
 **Branch names appearing garbled in terminal**
+
 - This was a known issue with the spinner display that has been fixed in recent versions
 
 ### Debug Mode
@@ -211,20 +250,30 @@ git-cleanup-merged --verbose --dry-run
 
 ```
 git-cleanup-merged/
-├── package-lock.json
+├── __tests__/              # Test files
+│   ├── index.test.js       # Main functionality tests
+│   ├── spinner.test.js     # Spinner component tests
+│   └── utils.test.js       # Utility function tests
+├── coverage/               # Coverage reports (generated)
+├── src/                    # Source code
+│   ├── index.js            # Main GitCleanupTool class
+│   └── utils/
+│       ├── index.js        # Utility functions
+│       └── spinner.js      # Spinner component
+├── bin.js                  # CLI entry point
 ├── package.json
-├── README.md
-└── src
-    ├── index.js
-    └── utils
-        └── index.js
+├── package-lock.json
+├── .eslintrc.js           # ESLint configuration
+├── .prettierrc            # Prettier configuration
+└── README.md
 ```
 
 ### Key Components
 
 - **GitCleanupTool**: Main class that orchestrates the cleanup process
-- **Spinner**: Enhanced spinner class with proper terminal handling
-- **clearTerminal**: Utility function for terminal clearing
+- **Spinner**: Enhanced spinner class with proper terminal handling and testability
+- **CLI Entry Point**: Separate `bin.js` file for clean CLI execution
+- **Test Suite**: Comprehensive tests covering all functionality and edge cases
 
 ### Contributing
 
@@ -237,21 +286,46 @@ git-cleanup-merged/
 ### Running Tests
 
 ```bash
+# Run all tests
 npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run linting
+npm run lint
+
+# Run linting with auto-fix
+npm run lint:fix
+
+# Format code
+npm run format
 ```
 
 ## License
 
 MIT License - see LICENSE file for details.
 
-## Changelog
+## 📋 Changelog
+
+### v1.2.0
+
+- 🎯 **100% Test Coverage**: Achieved complete test coverage across all code paths
+- 🧪 **Enhanced Test Suite**: Added 76 comprehensive test cases covering all functionality
+- 🔧 **Code Quality**: Added ESLint and Prettier for consistent code style
+- 🏗️ **Architecture Improvements**: Separated CLI entry point for better testability
+- 🐛 **Bug Fixes**: Fixed spinner component and improved error handling
+- 📊 **Coverage Thresholds**: Set minimum 75% branch coverage requirement
 
 ### v1.1.0
+
 - Fixed spinner display issue where branch names would merge together
 - Improved terminal output clearing with proper ANSI escape sequences
 - Enhanced progress indicators during branch checking and deletion
+- Added directory argument support for operating on different repositories
 
 ### v1.0.0
+
 - Initial release
 - Basic branch cleanup functionality
 - GitHub PR integration
@@ -259,11 +333,12 @@ MIT License - see LICENSE file for details.
 - Verbose logging
 - Interactive spinner with progress feedback
 
-## Support
+## 🤝 Support
 
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/ondrovic/git-cleanup-merged/issues)
-- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/ondrovic/git-cleanup-merged/discussions)
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/ondro/git-cleanup-merged/issues)
+- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/ondro/git-cleanup-merged/discussions)
 - 📧 **Contact**: ondrovic@gmail.com
+- 📚 **Documentation**: This README contains comprehensive usage examples and troubleshooting
 
 ---
 
