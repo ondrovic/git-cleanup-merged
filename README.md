@@ -9,7 +9,7 @@ A Node.js command-line tool that automatically identifies and deletes local Git 
 
 ## 🧪 Testing & Quality Assurance
 
-- [![CI](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml/badge.svg)](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml) **CI runs on every branch and every pull request** via GitHub Actions (tests Node.js 16.x, 18.x, 20.x)
+- [![CI](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml/badge.svg)](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml) **CI runs on every branch and every pull request** via GitHub Actions (tests Node.js 18.x, 20.x)
 - [![codecov](https://codecov.io/gh/ondrovic/git-cleanup-merged/graph/badge.svg?token=x3cYga3d2E)](https://codecov.io/gh/ondrovic/git-cleanup-merged) **Live coverage tracking** via Codecov
 - 🚦 **Branch coverage threshold:** CI will fail if branch coverage drops below 75%
 - 📝 **JUnit test results and coverage are uploaded to Codecov for every CI run**
@@ -41,7 +41,7 @@ A Node.js command-line tool that automatically identifies and deletes local Git 
 
 Before installing, make sure you have:
 
-- **Node.js** (version 16 or higher - tested on 16.x, 18.x, and 20.x)
+- **Node.js** (version 18 or higher - tested on 18.x and 20.x)
 - **Git** installed and configured
 - **GitHub CLI** (`gh`) installed and authenticated
 - Active internet connection for GitHub API calls
@@ -265,7 +265,7 @@ git-cleanup-merged/
 │       └── spinner.js      # Spinner component
 ├── package.json
 ├── package-lock.json
-├── .eslintrc.js           # ESLint configuration
+├── eslint.config.mjs      # ESLint configuration
 ├── .prettierrc            # Prettier configuration
 └── README.md
 ```
@@ -309,6 +309,12 @@ npm run format
 MIT License - see LICENSE file for details.
 
 ## 📋 Changelog
+
+### v1.2.1
+
+- 🔧 **Node.js Compatibility**: Updated to require Node.js 18+ for ESLint 9.x compatibility
+- 🧪 **CI Updates**: Removed Node.js 16.x from CI matrix (reached end-of-life)
+- 📦 **Dependencies**: Updated to use modern ESLint flat config format
 
 ### v1.2.0
 
