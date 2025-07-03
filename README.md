@@ -9,7 +9,8 @@ A Node.js command-line tool that automatically identifies and deletes local Git 
 
 ## 🧪 Testing & Quality Assurance
 
-- [![CI](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml/badge.svg)](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml) **CI runs on every branch and every pull request** via GitHub Actions (tests Node.js 18.x, 20.x)
+- [![CI](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml/badge.svg)](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml) **CI runs on all pull requests and on push to `main`/`master` only** via GitHub Actions (tests Node.js 18.x, 20.x)
+  - This avoids duplicate runs for feature branches and is the recommended best practice for open source projects.
 - [![codecov](https://codecov.io/gh/ondrovic/git-cleanup-merged/graph/badge.svg?token=x3cYga3d2E)](https://codecov.io/gh/ondrovic/git-cleanup-merged) **Live coverage tracking** via Codecov
 - 🚦 **Branch coverage threshold:** CI will fail if branch coverage drops below 75%
 - 📝 **JUnit test results and coverage are uploaded to Codecov for every CI run**
@@ -315,6 +316,7 @@ MIT License - see LICENSE file for details.
 - 🔧 **Node.js Compatibility**: Updated to require Node.js 18+ for ESLint 9.x compatibility
 - 🧪 **CI Updates**: Removed Node.js 16.x from CI matrix (reached end-of-life)
 - 📦 **Dependencies**: Updated to use modern ESLint flat config format
+- 🚦 **Workflow Optimization**: CI now only runs on pull requests and on push to `main`/`master` to avoid duplicate runs for feature branches
 
 ### v1.2.0
 
