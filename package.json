@@ -9,7 +9,7 @@
   "scripts": {
     "test": "jest",
     "test:coverage": "jest --coverage",
-    "test:coverage:ci": "jest --coverage && node -e \"const fs=require('fs');const xml=fs.readFileSync('coverage/junit.xml','utf8');fs.writeFileSync('coverage/junit.xml',xml.replace(/\\\\/g,'/'));\"",
+    "test:coverage:ci": "jest --coverage && node scripts/fix-junit.js",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
