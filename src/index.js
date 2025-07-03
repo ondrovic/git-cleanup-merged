@@ -254,8 +254,9 @@ class GitCleanupTool {
         this.spinner.start();
 
         try {
-          await this.execCommand(`git branch -d "${branch}"`);
+          await this.execCommand(`git branch -d "${branch}"`, { silent: true });
           deletedCount++;
+          this.spinner.log(`Deleted branch ${branch}`, colors.green);
           // Brief pause to show progress (and let user see the spinner!)
           await this.sleep(400);
         } catch {

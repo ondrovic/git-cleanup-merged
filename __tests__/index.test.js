@@ -464,8 +464,14 @@ describe("GitCleanupTool", () => {
       expect(tool.askConfirmation).toHaveBeenCalledWith(
         "Proceed with deletion? (y/N): ",
       );
-      expect(tool.execCommand).toHaveBeenCalledWith('git branch -d "feature1"');
-      expect(tool.execCommand).toHaveBeenCalledWith('git branch -d "feature2"');
+      expect(tool.execCommand).toHaveBeenCalledWith(
+        'git branch -d "feature1"',
+        { silent: true },
+      );
+      expect(tool.execCommand).toHaveBeenCalledWith(
+        'git branch -d "feature2"',
+        { silent: true },
+      );
       expect(tool.spinner.success).toHaveBeenCalledWith(
         "Successfully deleted 2 branches",
       );
