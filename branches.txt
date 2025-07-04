@@ -1,4 +1,0 @@
-bugfix/missing-codecov-tests
-main
-task/detect-and-remove-untracked-branches
-test/merged-branch
