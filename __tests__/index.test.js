@@ -331,6 +331,16 @@ describe("GitCleanupTool", () => {
 
       expect(result).toEqual([]);
     });
+
+    it("should handle multiple consecutive spaces between branch and upstream", async () => {
+      tool.execCommand.mockResolvedValueOnce(
+        "feature1    origin/feature1\nfeature2  upstream/feature2\nmain origin/main",
+      ); // format: "branch    upstream" with multiple spaces
+
+      const result = await tool.getTrackedBranches();
+
+      expect(result).toEqual(["feature1", "feature2"]);
+    });
   });
 
   describe("getUntrackedBranches method", () => {
@@ -378,6 +388,16 @@ describe("GitCleanupTool", () => {
       const result = await tool.getUntrackedBranches();
 
       expect(result).toEqual(["feature1", "feature2"]);
+    });
+
+    it("should handle multiple consecutive spaces between branch and upstream", async () => {
+      tool.execCommand.mockResolvedValueOnce(
+        "feature1    \nfeature2  upstream/feature2\nmain origin/main",
+      ); // format: "branch    upstream" with multiple spaces
+
+      const result = await tool.getUntrackedBranches();
+
+      expect(result).toEqual(["feature1"]);
     });
   });
 

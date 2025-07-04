@@ -143,7 +143,10 @@ class GitCleanupTool {
         .map((line) => line.trim());
 
       for (const line of branchLines) {
-        const [branchName, upstream] = line.split(" ");
+        // Use regex to split on one or more whitespace characters
+        const parts = line.split(/\s+/);
+        const branchName = parts[0];
+        const upstream = parts.slice(1).join(" "); // Join remaining parts in case upstream contains spaces
 
         // Skip main, master, and current branch
         if (["main", "master", this.currentBranch].includes(branchName)) {
@@ -179,7 +182,10 @@ class GitCleanupTool {
         .map((line) => line.trim());
 
       for (const line of branchLines) {
-        const [branchName, upstream] = line.split(" ");
+        // Use regex to split on one or more whitespace characters
+        const parts = line.split(/\s+/);
+        const branchName = parts[0];
+        const upstream = parts.slice(1).join(" "); // Join remaining parts in case upstream contains spaces
 
         // Skip main, master, and current branch
         if (["main", "master", this.currentBranch].includes(branchName)) {

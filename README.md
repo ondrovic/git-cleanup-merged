@@ -36,7 +36,7 @@ A Node.js command-line tool that automatically identifies and deletes local Git 
 - 🎨 **Colorful Output**: Clear visual indicators with icons and colors
 - 📊 **Status Overview**: Shows comprehensive branch status table
 - ⚡ **Interactive Spinner**: Real-time progress updates with animated spinner
-- 🛡️ **Comprehensive Testing**: 100% test coverage with 91 test cases and live coverage tracking
+- 🛡️ **Comprehensive Testing**: 100% test coverage with 97 test cases and live coverage tracking
 - 🎯 **Code Quality**: ESLint and Prettier for consistent code style
 - 🧠 **Smart UX**: Focused modes - main mode for PR cleanup, untracked mode for local cleanup
 
@@ -245,6 +245,7 @@ Proceed with deletion of untracked branches? (y/N): y
 3. **Tracked Branch Discovery**: Lists only branches that have remote tracking (excluding `main`, `master`, current branch)
    - Uses Git's upstream tracking information to accurately detect tracked branches
    - Works with any remote name (origin, upstream, etc.) - not hard-coded to "origin"
+   - Robust parsing handles multiple consecutive spaces in Git output
 4. **PR Status Check**: Queries GitHub API for each branch's PR status with progress indication
 5. **Results Display**: Shows a comprehensive status table with clear visual indicators
 6. **Safe Deletion**: Only deletes branches with merged PRs (with user confirmation)
@@ -256,6 +257,7 @@ Proceed with deletion of untracked branches? (y/N): y
 3. **Untracked Branch Discovery**: Lists only local branches without remote tracking (excluding `main`, `master`, current branch)
    - Uses Git's upstream tracking information to accurately detect untracked branches
    - Works with any remote name (origin, upstream, etc.) - not hard-coded to "origin"
+   - Robust parsing handles multiple consecutive spaces in Git output
 4. **Results Display**: Shows untracked branches with 🏷️ icon
 5. **Safe Deletion**: Deletes untracked branches (with user confirmation)
 
@@ -281,6 +283,7 @@ Proceed with deletion of untracked branches? (y/N): y
 - **Confirmation Required**: Always asks before deleting (unless in dry-run mode)
 - **GitHub Verification**: Only deletes branches with confirmed merged PRs (main mode)
 - **Untracked Detection**: Only deletes local branches without remote tracking (untracked mode)
+- **Robust Parsing**: Handles various Git output formats including multiple consecutive spaces
 - **Error Handling**: Graceful failure handling with informative messages
 - **Progress Feedback**: Real-time spinner shows current operation status
 - **Smart UX**: Main mode focuses on PR cleanup, untracked mode focuses on local cleanup
@@ -386,16 +389,26 @@ MIT License - see LICENSE file for details.
 
 ## 📋 Changelog
 
+### v1.3.1
+
+- 🐛 **Critical Bug Fix**: Fixed whitespace parsing issue in branch tracking detection
+  - The `line.split(" ")` logic was not robust and could misclassify tracked branches as untracked when `git for-each-ref` output contained multiple consecutive spaces
+  - Replaced with `line.split(/\s+/)` and proper array handling to correctly parse branch names and upstream information
+  - Added comprehensive tests to verify the fix works with various whitespace scenarios
+- 🧪 **Enhanced Testing**: Added 2 new test cases specifically for whitespace parsing edge cases
+- ✅ **Maintained Quality**: 100% test coverage preserved with 97 test cases
+
 ### v1.3.0
 
 - 🏷️ **New Feature**: Added `--untracked-only` mode to clean up local branches without remote tracking
 - 🧠 **Improved UX**: Main mode now only shows tracked branches with PRs, untracked mode handles local-only branches
 - 🔧 **Smart Dependencies**: GitHub CLI only required for main mode, not for untracked mode
 - 💡 **Helpful Guidance**: Suggests `--untracked-only` when no tracked branches found in main mode
-- 🎯 **100% Test Coverage**: Achieved complete test coverage with 95 comprehensive test cases
+- 🎯 **100% Test Coverage**: Achieved complete test coverage with 97 comprehensive test cases
 - 🐛 **Bug Fixes**: Fixed branch tracking detection logic and improved deletion feedback
 - 📊 **Enhanced Testing**: Added tests for all new functionality and edge cases
 - 🔧 **Critical Fix**: Fixed branch tracking detection to use proper Git upstream relationships instead of hard-coded remote names
+- 🛠️ **Robust Parsing**: Fixed whitespace parsing bug that could misclassify tracked branches as untracked
 
 ### v1.2.1
 
