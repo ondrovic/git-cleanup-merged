@@ -20,6 +20,7 @@ class GitCleanupTool {
   constructor() {
     this.dryRun = false;
     this.verbose = false;
+    this.untrackedOnly = false;
     this.branchesToDelete = [];
     this.prResults = [];
     this.currentBranch = "";
@@ -61,23 +62,30 @@ class GitCleanupTool {
     }
     await this.sleep(300); // Minimum spinner time
 
-    this.spinner.updateMessage("Checking GitHub CLI...");
-    // Check for GitHub CLI
-    if ((await this.execCommand("gh --version", { silent: true })) === null) {
-      this.spinner.error(
-        "GitHub CLI (gh) is not installed. Please install it from https://cli.github.com/",
-      );
-      process.exit(1);
-    }
-    await this.sleep(200);
+    // Only check GitHub CLI dependencies if not in untracked-only mode
+    if (!this.untrackedOnly) {
+      this.spinner.updateMessage("Checking GitHub CLI...");
+      // Check for GitHub CLI
+      if ((await this.execCommand("gh --version", { silent: true })) === null) {
+        this.spinner.error(
+          "GitHub CLI (gh) is not installed. Please install it from https://cli.github.com/",
+        );
+        process.exit(1);
+      }
+      await this.sleep(200);
 
-    this.spinner.updateMessage("Verifying GitHub authentication...");
-    // Check GitHub CLI authentication
-    if ((await this.execCommand("gh auth status", { silent: true })) === null) {
-      this.spinner.error("GitHub CLI is not authenticated. Run: gh auth login");
-      process.exit(1);
+      this.spinner.updateMessage("Verifying GitHub authentication...");
+      // Check GitHub CLI authentication
+      if (
+        (await this.execCommand("gh auth status", { silent: true })) === null
+      ) {
+        this.spinner.error(
+          "GitHub CLI is not authenticated. Run: gh auth login",
+        );
+        process.exit(1);
+      }
+      await this.sleep(200);
     }
-    await this.sleep(200);
 
     this.spinner.success("Dependencies checked");
   }
@@ -119,6 +127,83 @@ class GitCleanupTool {
     }
   }
 
+  async getTrackedBranches() {
+    try {
+      const branches = await this.execCommand(
+        'git for-each-ref --format="%(refname:short)" refs/heads/',
+        { silent: true },
+      );
+
+      const localBranches = branches
+        .split("\n")
+        .filter((branch) => branch.trim() !== "")
+        .filter(
+          (branch) =>
+            !["main", "master", this.currentBranch].includes(branch.trim()),
+        )
+        .map((branch) => branch.trim());
+
+      const trackedBranches = [];
+
+      for (const branch of localBranches) {
+        // Check if branch has a remote tracking branch
+        const result = await this.execCommand(
+          `git rev-parse --verify origin/${branch}`,
+          { silent: true },
+        );
+
+        // If execCommand returns a value, the branch has a remote tracking branch
+        if (result !== null) {
+          trackedBranches.push(branch);
+        }
+      }
+
+      return trackedBranches;
+    } catch {
+      this.spinner.error("Failed to get tracked branches");
+      return [];
+    }
+  }
+
+  async getUntrackedBranches() {
+    try {
+      const branches = await this.execCommand(
+        'git for-each-ref --format="%(refname:short)" refs/heads/',
+        { silent: true },
+      );
+
+      const localBranches = branches
+        .split("\n")
+        .filter((branch) => branch.trim() !== "")
+        .filter(
+          (branch) =>
+            !["main", "master", this.currentBranch].includes(branch.trim()),
+        )
+        .map((branch) => branch.trim());
+
+      const untrackedBranches = [];
+
+      for (const branch of localBranches) {
+        // Check if branch has a remote tracking branch
+        const result = await this.execCommand(
+          `git rev-parse --verify origin/${branch}`,
+          { silent: true },
+        );
+
+        // If execCommand returns null, the command failed (no remote tracking branch)
+        if (result === null) {
+          untrackedBranches.push(branch);
+        }
+        // If execCommand returns a value, the branch has a remote tracking branch, so skip it
+      }
+
+      return untrackedBranches;
+    } catch {
+      this.spinner.error("Failed to get untracked branches");
+      return [];
+    }
+  }
+
   async getPRStatus(branch) {
     try {
       const result = await this.execCommand(
@@ -132,18 +217,21 @@ class GitCleanupTool {
   }
 
   async checkBranches() {
-    this.spinner.updateMessage("Fetching local branches...");
+    this.spinner.updateMessage("Fetching tracked branches...");
     this.spinner.start();
 
-    const branches = await this.getLocalBranches();
+    const branches = await this.getTrackedBranches();
 
     if (branches.length === 0) {
-      this.spinner.warning("No local branches to check.");
+      this.spinner.warning("No tracked branches found to check.");
+      this.spinner.info(
+        "You might want to use --untracked-only to see local-only branches.",
+      );
       return;
     }
 
     this.spinner.updateMessage(
-      `Checking ${branches.length} branches against GitHub...`,
+      `Checking ${branches.length} tracked branches against GitHub...`,
     );
 
     // Process each branch
@@ -191,7 +279,60 @@ class GitCleanupTool {
       await this.sleep(300);
     }
 
-    this.spinner.success(`Finished checking ${branches.length} branches`);
+    this.spinner.success(
+      `Finished checking ${branches.length} tracked branches`,
+    );
+    console.log(""); // Empty line for spacing
+  }
+
+  async checkUntrackedBranches() {
+    this.spinner.updateMessage("Fetching untracked local branches...");
+    this.spinner.start();
+
+    const untrackedBranches = await this.getUntrackedBranches();
+
+    if (untrackedBranches.length === 0) {
+      this.spinner.warning("No untracked local branches found.");
+      return;
+    }
+
+    this.spinner.updateMessage(
+      `Found ${untrackedBranches.length} untracked local branches...`,
+    );
+
+    // Process each untracked branch
+    for (let i = 0; i < untrackedBranches.length; i++) {
+      const branch = untrackedBranches[i];
+      this.spinner.updateMessage(
+        `Processing untracked branch ${i + 1}/${untrackedBranches.length}: ${branch}`,
+      );
+
+      // Only call debug if verbose is enabled to avoid stopping spinner
+      if (this.verbose) {
+        this.spinner.debug(
+          `Processing untracked branch ${branch}`,
+          this.verbose,
+        );
+        // Restart spinner after debug output
+        this.spinner.updateMessage(
+          `Processing untracked branch ${i + 1}/${untrackedBranches.length}: ${branch}`,
+        );
+        this.spinner.start();
+      }
+
+      const icon = "🏷️";
+      const label = "Untracked";
+      this.branchesToDelete.push(branch);
+
+      this.prResults.push({ branch, icon, label });
+
+      // Add a small delay so we can see the spinner working
+      await this.sleep(300);
+    }
+
+    this.spinner.success(
+      `Finished processing ${untrackedBranches.length} untracked branches`,
+    );
     console.log(""); // Empty line for spacing
   }
 
@@ -213,7 +354,11 @@ class GitCleanupTool {
 
   async deleteBranches() {
     if (this.branchesToDelete.length === 0) {
-      this.spinner.warning("No branches with merged PRs found.");
+      if (this.untrackedOnly) {
+        this.spinner.warning("No untracked local branches found.");
+      } else {
+        this.spinner.warning("No branches with merged PRs found.");
+      }
       return;
     }
 
@@ -221,9 +366,15 @@ class GitCleanupTool {
     if (this.dryRun) {
       this.spinner.warning("DRY RUN — branches eligible for deletion:");
     } else {
-      this.spinner.error(
-        "The following branches have merged PRs and will be deleted:",
-      );
+      if (this.untrackedOnly) {
+        this.spinner.error(
+          "The following untracked local branches will be deleted:",
+        );
+      } else {
+        this.spinner.error(
+          "The following branches have merged PRs and will be deleted:",
+        );
+      }
     }
 
     // List branches without icons since the spinner methods handle them
@@ -232,13 +383,21 @@ class GitCleanupTool {
     });
 
     if (this.dryRun) {
-      this.spinner.info("Run without --dry-run to actually delete them.");
+      if (this.untrackedOnly) {
+        this.spinner.info(
+          "Run without --dry-run to actually delete untracked branches.",
+        );
+      } else {
+        this.spinner.info("Run without --dry-run to actually delete them.");
+      }
       return;
     }
 
-    const confirmed = await this.askConfirmation(
-      "Proceed with deletion? (y/N): ",
-    );
+    const confirmationMessage = this.untrackedOnly
+      ? "Proceed with deletion of untracked branches? (y/N): "
+      : "Proceed with deletion? (y/N): ";
+
+    const confirmed = await this.askConfirmation(confirmationMessage);
 
     if (confirmed) {
       console.log(""); // Empty line for spacing
@@ -256,11 +415,17 @@ class GitCleanupTool {
         try {
           await this.execCommand(`git branch -d "${branch}"`, { silent: true });
           deletedCount++;
-          this.spinner.log(`Deleted branch ${branch}`, colors.green);
-          // Brief pause to show progress (and let user see the spinner!)
-          await this.sleep(400);
+          // Stop spinner before printing confirmation to avoid overlap
+          this.spinner.stop();
+          this.spinner.log(`✅ Deleted branch ${branch}`, colors.green);
+          // Brief pause to show progress
+          await this.sleep(200);
         } catch {
           failedBranches.push(branch);
+          // Stop spinner before printing error to avoid overlap
+          this.spinner.stop();
+          this.spinner.log(`❌ Failed to delete branch ${branch}`, colors.red);
+          await this.sleep(200);
         }
       }
 
@@ -305,24 +470,30 @@ ${colors.bold}DIRECTORY (optional):${colors.reset}
     Path to a git repository to operate on. Defaults to the current directory if omitted.
 
 ${colors.bold}OPTIONS:${colors.reset}
-    -n, --dry-run     Show what would be deleted without actually deleting
-    -v, --verbose     Show detailed information during processing
-    -h, --help        Show this help message
+    -n, --dry-run         Show what would be deleted without actually deleting
+    -v, --verbose         Show detailed information during processing
+    --untracked-only      Only process untracked local branches (no remote tracking branch)
+    -h, --help            Show this help message
 
 ${colors.bold}DESCRIPTION:${colors.reset}
     This tool checks your local Git branches against GitHub PRs to find
     branches that have been merged and are safe to delete locally.
+    
+    When using --untracked-only, it will only process local branches that
+    don't have a corresponding remote tracking branch.
 
 ${colors.bold}REQUIREMENTS:${colors.reset}
     - Git repository
-    - GitHub CLI (gh) installed and authenticated
-    - Internet connection to check GitHub PR status
+    - GitHub CLI (gh) installed and authenticated (only for normal mode)
+    - Internet connection to check GitHub PR status (only for normal mode)
 
 ${colors.bold}EXAMPLES:${colors.reset}
     git-cleanup-merged                    # Clean up merged branches in current directory
     git-cleanup-merged ../my/repo         # Clean up merged branches in another repo
     git-cleanup-merged --dry-run          # Preview what would be deleted
     git-cleanup-merged --verbose          # Show detailed processing info
+    git-cleanup-merged --untracked-only   # Clean up untracked local branches only
+    git-cleanup-merged --untracked-only --dry-run  # Preview untracked branches
         `);
   }
 
@@ -348,6 +519,9 @@ ${colors.bold}EXAMPLES:${colors.reset}
         case "-v":
           this.verbose = true;
           break;
+        case "--untracked-only":
+          this.untrackedOnly = true;
+          break;
         case "--help":
         case "-h":
           this.showHelp();
@@ -371,7 +545,13 @@ ${colors.bold}EXAMPLES:${colors.reset}
       this.parseArguments();
       await this.checkDependencies();
       await this.getCurrentBranch();
-      await this.checkBranches();
+
+      if (this.untrackedOnly) {
+        await this.checkUntrackedBranches();
+      } else {
+        await this.checkBranches();
+      }
+
       this.displayResults();
       await this.deleteBranches();
     } catch (error) {

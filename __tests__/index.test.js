@@ -185,6 +185,25 @@ describe("GitCleanupTool", () => {
       );
       expect(process.exit).toHaveBeenCalledWith(1);
     });
+
+    it("should skip GitHub CLI checks in untracked-only mode", async () => {
+      tool.untrackedOnly = true;
+      tool.execCommand.mockResolvedValueOnce(".git"); // git rev-parse --git-dir
+
+      await tool.checkDependencies();
+
+      expect(tool.spinner.updateMessage).toHaveBeenCalledWith(
+        "Checking dependencies...",
+      );
+      expect(tool.spinner.success).toHaveBeenCalledWith("Dependencies checked");
+      // Should not check GitHub CLI
+      expect(tool.execCommand).not.toHaveBeenCalledWith("gh --version", {
+        silent: true,
+      });
+      expect(tool.execCommand).not.toHaveBeenCalledWith("gh auth status", {
+        silent: true,
+      });
+    });
   });
 
   describe("getCurrentBranch method", () => {
@@ -266,6 +285,64 @@ describe("GitCleanupTool", () => {
     });
   });
 
+  describe("getTrackedBranches method", () => {
+    beforeEach(() => {
+      tool.execCommand = jest.fn();
+      tool.currentBranch = "main";
+    });
+
+    it("should get tracked branches successfully", async () => {
+      tool.execCommand
+        .mockResolvedValueOnce("feature1\nfeature2\nmain") // getLocalBranches
+        .mockResolvedValueOnce("commit-hash") // feature1 has remote tracking
+        .mockResolvedValueOnce(null); // feature2 has no remote tracking
+
+      const result = await tool.getTrackedBranches();
+
+      expect(result).toEqual(["feature1"]);
+    });
+
+    it("should handle error", async () => {
+      tool.execCommand.mockRejectedValue(new Error("Failed"));
+
+      const result = await tool.getTrackedBranches();
+
+      expect(tool.spinner.error).toHaveBeenCalledWith(
+        "Failed to get tracked branches",
+      );
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe("getUntrackedBranches method", () => {
+    beforeEach(() => {
+      tool.execCommand = jest.fn();
+      tool.currentBranch = "main";
+    });
+
+    it("should get untracked branches successfully", async () => {
+      tool.execCommand
+        .mockResolvedValueOnce("feature1\nfeature2\nmain") // getLocalBranches
+        .mockResolvedValueOnce(null) // feature1 has no remote tracking
+        .mockResolvedValueOnce("commit-hash"); // feature2 has remote tracking
+
+      const result = await tool.getUntrackedBranches();
+
+      expect(result).toEqual(["feature1"]);
+    });
+
+    it("should handle error", async () => {
+      tool.execCommand.mockRejectedValue(new Error("Failed"));
+
+      const result = await tool.getUntrackedBranches();
+
+      expect(tool.spinner.error).toHaveBeenCalledWith(
+        "Failed to get untracked branches",
+      );
+      expect(result).toEqual([]);
+    });
+  });
+
   describe("getPRStatus method", () => {
     beforeEach(() => {
       tool.execCommand = jest.fn();
@@ -294,13 +371,13 @@ describe("GitCleanupTool", () => {
 
   describe("checkBranches method", () => {
     beforeEach(() => {
-      tool.getLocalBranches = jest.fn();
+      tool.getTrackedBranches = jest.fn();
       tool.getPRStatus = jest.fn();
       tool.sleep = jest.fn();
     });
 
     it("should check branches successfully", async () => {
-      tool.getLocalBranches.mockResolvedValue(["feature1", "feature2"]);
+      tool.getTrackedBranches.mockResolvedValue(["feature1", "feature2"]);
       tool.getPRStatus
         .mockResolvedValueOnce("MERGED")
         .mockResolvedValueOnce("OPEN");
@@ -308,29 +385,32 @@ describe("GitCleanupTool", () => {
       await tool.checkBranches();
 
       expect(tool.spinner.updateMessage).toHaveBeenCalledWith(
-        "Fetching local branches...",
+        "Fetching tracked branches...",
       );
       expect(tool.spinner.start).toHaveBeenCalled();
       expect(tool.branchesToDelete).toEqual(["feature1"]);
       expect(tool.prResults).toHaveLength(2);
       expect(tool.spinner.success).toHaveBeenCalledWith(
-        "Finished checking 2 branches",
+        "Finished checking 2 tracked branches",
       );
     });
 
     it("should handle no branches to check", async () => {
-      tool.getLocalBranches.mockResolvedValue([]);
+      tool.getTrackedBranches.mockResolvedValue([]);
 
       await tool.checkBranches();
 
       expect(tool.spinner.warning).toHaveBeenCalledWith(
-        "No local branches to check.",
+        "No tracked branches found to check.",
+      );
+      expect(tool.spinner.info).toHaveBeenCalledWith(
+        "You might want to use --untracked-only to see local-only branches.",
       );
     });
 
     it("should handle verbose mode", async () => {
       tool.verbose = true;
-      tool.getLocalBranches.mockResolvedValue(["feature1"]);
+      tool.getTrackedBranches.mockResolvedValue(["feature1"]);
       tool.getPRStatus.mockResolvedValue("MERGED");
 
       await tool.checkBranches();
@@ -339,7 +419,7 @@ describe("GitCleanupTool", () => {
     });
 
     it("should handle different PR statuses", async () => {
-      tool.getLocalBranches.mockResolvedValue(["merged", "open", "none"]);
+      tool.getTrackedBranches.mockResolvedValue(["merged", "open", "none"]);
       tool.getPRStatus
         .mockResolvedValueOnce("MERGED")
         .mockResolvedValueOnce("OPEN")
@@ -356,7 +436,7 @@ describe("GitCleanupTool", () => {
     });
 
     it("should handle unknown PR status", async () => {
-      tool.getLocalBranches.mockResolvedValue(["unknown-status"]);
+      tool.getTrackedBranches.mockResolvedValue(["unknown-status"]);
       tool.getPRStatus.mockResolvedValue("CLOSED"); // Unknown status
 
       await tool.checkBranches();
@@ -369,7 +449,7 @@ describe("GitCleanupTool", () => {
 
     it("should show unknown status in debug output when verbose", async () => {
       tool.verbose = true;
-      tool.getLocalBranches.mockResolvedValue(["unknown-status"]);
+      tool.getTrackedBranches.mockResolvedValue(["unknown-status"]);
       tool.getPRStatus.mockResolvedValue("CLOSED"); // Unknown status
 
       await tool.checkBranches();
@@ -386,7 +466,7 @@ describe("GitCleanupTool", () => {
 
     it("should show 'unknown' in debug output when prStatus is null and verbose", async () => {
       tool.verbose = true;
-      tool.getLocalBranches.mockResolvedValue(["null-status"]);
+      tool.getTrackedBranches.mockResolvedValue(["null-status"]);
       tool.getPRStatus.mockResolvedValue(null); // This will trigger the || "unknown" fallback
 
       await tool.checkBranches();
@@ -399,6 +479,48 @@ describe("GitCleanupTool", () => {
       expect(tool.prResults).toEqual([
         { branch: "null-status", icon: "❌", label: "No PR" },
       ]);
+    });
+  });
+
+  describe("checkUntrackedBranches method", () => {
+    beforeEach(() => {
+      tool.getUntrackedBranches = jest.fn();
+      tool.sleep = jest.fn();
+    });
+
+    it("should check untracked branches successfully", async () => {
+      tool.getUntrackedBranches.mockResolvedValue(["feature1", "feature2"]);
+
+      await tool.checkUntrackedBranches();
+
+      expect(tool.spinner.updateMessage).toHaveBeenCalledWith(
+        "Fetching untracked local branches...",
+      );
+      expect(tool.spinner.start).toHaveBeenCalled();
+      expect(tool.branchesToDelete).toEqual(["feature1", "feature2"]);
+      expect(tool.prResults).toHaveLength(2);
+      expect(tool.spinner.success).toHaveBeenCalledWith(
+        "Finished processing 2 untracked branches",
+      );
+    });
+
+    it("should handle no untracked branches", async () => {
+      tool.getUntrackedBranches.mockResolvedValue([]);
+
+      await tool.checkUntrackedBranches();
+
+      expect(tool.spinner.warning).toHaveBeenCalledWith(
+        "No untracked local branches found.",
+      );
+    });
+
+    it("should handle verbose mode", async () => {
+      tool.verbose = true;
+      tool.getUntrackedBranches.mockResolvedValue(["feature1"]);
+
+      await tool.checkUntrackedBranches();
+
+      expect(tool.spinner.debug).toHaveBeenCalled();
     });
   });
 
@@ -434,6 +556,17 @@ describe("GitCleanupTool", () => {
 
       expect(tool.spinner.warning).toHaveBeenCalledWith(
         "No branches with merged PRs found.",
+      );
+    });
+
+    it("should handle no untracked branches to delete", async () => {
+      tool.untrackedOnly = true;
+      tool.branchesToDelete = [];
+
+      await tool.deleteBranches();
+
+      expect(tool.spinner.warning).toHaveBeenCalledWith(
+        "No untracked local branches found.",
       );
     });
 
@@ -499,6 +632,37 @@ describe("GitCleanupTool", () => {
 
       expect(tool.spinner.info).toHaveBeenCalledWith("Cancelled.");
       expect(tool.execCommand).not.toHaveBeenCalled();
+    });
+
+    it("should handle untracked-only mode", async () => {
+      tool.untrackedOnly = true;
+      tool.branchesToDelete = ["feature1"];
+      tool.askConfirmation.mockResolvedValue(true);
+      tool.execCommand.mockResolvedValue("");
+
+      await tool.deleteBranches();
+
+      expect(tool.spinner.error).toHaveBeenCalledWith(
+        "The following untracked local branches will be deleted:",
+      );
+      expect(tool.askConfirmation).toHaveBeenCalledWith(
+        "Proceed with deletion of untracked branches? (y/N): ",
+      );
+    });
+
+    it("should handle untracked-only dry run mode", async () => {
+      tool.untrackedOnly = true;
+      tool.dryRun = true;
+      tool.branchesToDelete = ["feature1"];
+
+      await tool.deleteBranches();
+
+      expect(tool.spinner.warning).toHaveBeenCalledWith(
+        "DRY RUN — branches eligible for deletion:",
+      );
+      expect(tool.spinner.info).toHaveBeenCalledWith(
+        "Run without --dry-run to actually delete untracked branches.",
+      );
     });
   });
 
@@ -601,6 +765,23 @@ describe("GitCleanupTool", () => {
 
       tool.parseArguments();
 
+      expect(tool.verbose).toBe(true);
+    });
+
+    it("should parse untracked-only flag", () => {
+      process.argv = ["node", "script.js", "--untracked-only"];
+
+      tool.parseArguments();
+
+      expect(tool.untrackedOnly).toBe(true);
+    });
+
+    it("should parse untracked-only flag with verbose", () => {
+      process.argv = ["node", "script.js", "--untracked-only", "--verbose"];
+
+      tool.parseArguments();
+
+      expect(tool.untrackedOnly).toBe(true);
       expect(tool.verbose).toBe(true);
     });
 
@@ -736,6 +917,28 @@ describe("GitCleanupTool", () => {
         `📂 Scanning repository: ${path.basename("/another/path/ollama-git-commit")}`,
         "\x1b[34m",
       );
+    });
+
+    it("should run in untracked-only mode", async () => {
+      tool.untrackedOnly = true;
+      tool.checkUntrackedBranches = jest.fn();
+
+      await tool.run();
+
+      expect(tool.checkUntrackedBranches).toHaveBeenCalled();
+      expect(tool.checkBranches).not.toHaveBeenCalled();
+    });
+
+    it("should handle errors from getCurrentBranch", async () => {
+      const error = new Error("Branch error");
+      tool.getCurrentBranch.mockRejectedValue(error);
+
+      await tool.run();
+
+      expect(tool.spinner.error).toHaveBeenCalledWith(
+        "An error occurred: Branch error",
+      );
+      expect(process.exit).toHaveBeenCalledWith(1);
     });
   });
 });
