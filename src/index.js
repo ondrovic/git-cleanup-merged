@@ -129,32 +129,30 @@ class GitCleanupTool {
 
   async getTrackedBranches() {
     try {
+      // Get all local branches with their upstream tracking information
       const branches = await this.execCommand(
-        'git for-each-ref --format="%(refname:short)" refs/heads/',
+        'git for-each-ref --format="%(refname:short) %(upstream:short)" refs/heads/',
         { silent: true },
       );
 
-      const localBranches = branches
-        .split("\n")
-        .filter((branch) => branch.trim() !== "")
-        .filter(
-          (branch) =>
-            !["main", "master", this.currentBranch].includes(branch.trim()),
-        )
-        .map((branch) => branch.trim());
-
       const trackedBranches = [];
 
-      for (const branch of localBranches) {
-        // Check if branch has a remote tracking branch
-        const result = await this.execCommand(
-          `git rev-parse --verify origin/${branch}`,
-          { silent: true },
-        );
+      const branchLines = branches
+        .split("\n")
+        .filter((line) => line.trim() !== "")
+        .map((line) => line.trim());
 
-        // If execCommand returns a value, the branch has a remote tracking branch
-        if (result !== null) {
-          trackedBranches.push(branch);
+      for (const line of branchLines) {
+        const [branchName, upstream] = line.split(" ");
+
+        // Skip main, master, and current branch
+        if (["main", "master", this.currentBranch].includes(branchName)) {
+          continue;
+        }
+
+        // If upstream is not empty, the branch is tracking a remote branch
+        if (upstream && upstream.trim() !== "") {
+          trackedBranches.push(branchName);
         }
       }
 
@@ -167,34 +165,31 @@ class GitCleanupTool {
 
   async getUntrackedBranches() {
     try {
+      // Get all local branches with their upstream tracking information
       const branches = await this.execCommand(
-        'git for-each-ref --format="%(refname:short)" refs/heads/',
+        'git for-each-ref --format="%(refname:short) %(upstream:short)" refs/heads/',
         { silent: true },
       );
 
-      const localBranches = branches
-        .split("\n")
-        .filter((branch) => branch.trim() !== "")
-        .filter(
-          (branch) =>
-            !["main", "master", this.currentBranch].includes(branch.trim()),
-        )
-        .map((branch) => branch.trim());
-
       const untrackedBranches = [];
 
-      for (const branch of localBranches) {
-        // Check if branch has a remote tracking branch
-        const result = await this.execCommand(
-          `git rev-parse --verify origin/${branch}`,
-          { silent: true },
-        );
+      const branchLines = branches
+        .split("\n")
+        .filter((line) => line.trim() !== "")
+        .map((line) => line.trim());
 
-        // If execCommand returns null, the command failed (no remote tracking branch)
-        if (result === null) {
-          untrackedBranches.push(branch);
+      for (const line of branchLines) {
+        const [branchName, upstream] = line.split(" ");
+
+        // Skip main, master, and current branch
+        if (["main", "master", this.currentBranch].includes(branchName)) {
+          continue;
         }
-        // If execCommand returns a value, the branch has a remote tracking branch, so skip it
+
+        // If upstream is empty, the branch is not tracking any remote branch
+        if (!upstream || upstream.trim() === "") {
+          untrackedBranches.push(branchName);
+        }
       }
 
       return untrackedBranches;

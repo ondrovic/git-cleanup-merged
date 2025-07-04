@@ -292,10 +292,9 @@ describe("GitCleanupTool", () => {
     });
 
     it("should get tracked branches successfully", async () => {
-      tool.execCommand
-        .mockResolvedValueOnce("feature1\nfeature2\nmain") // getLocalBranches
-        .mockResolvedValueOnce("commit-hash") // feature1 has remote tracking
-        .mockResolvedValueOnce(null); // feature2 has no remote tracking
+      tool.execCommand.mockResolvedValueOnce(
+        "feature1 origin/feature1\nfeature2 \nmain origin/main",
+      ); // format: "branch upstream"
 
       const result = await tool.getTrackedBranches();
 
@@ -312,6 +311,26 @@ describe("GitCleanupTool", () => {
       );
       expect(result).toEqual([]);
     });
+
+    it("should handle different remote names", async () => {
+      tool.execCommand.mockResolvedValueOnce(
+        "feature1 upstream/feature1\nfeature2 \nmain origin/main",
+      ); // format: "branch upstream"
+
+      const result = await tool.getTrackedBranches();
+
+      expect(result).toEqual(["feature1"]);
+    });
+
+    it("should handle empty upstream field", async () => {
+      tool.execCommand.mockResolvedValueOnce(
+        "feature1 \nfeature2   \nmain origin/main",
+      ); // format: "branch upstream" with whitespace
+
+      const result = await tool.getTrackedBranches();
+
+      expect(result).toEqual([]);
+    });
   });
 
   describe("getUntrackedBranches method", () => {
@@ -321,10 +340,9 @@ describe("GitCleanupTool", () => {
     });
 
     it("should get untracked branches successfully", async () => {
-      tool.execCommand
-        .mockResolvedValueOnce("feature1\nfeature2\nmain") // getLocalBranches
-        .mockResolvedValueOnce(null) // feature1 has no remote tracking
-        .mockResolvedValueOnce("commit-hash"); // feature2 has remote tracking
+      tool.execCommand.mockResolvedValueOnce(
+        "feature1 \nfeature2 origin/feature2\nmain origin/main",
+      ); // format: "branch upstream"
 
       const result = await tool.getUntrackedBranches();
 
@@ -340,6 +358,26 @@ describe("GitCleanupTool", () => {
         "Failed to get untracked branches",
       );
       expect(result).toEqual([]);
+    });
+
+    it("should handle different remote names", async () => {
+      tool.execCommand.mockResolvedValueOnce(
+        "feature1 \nfeature2 upstream/feature2\nmain origin/main",
+      ); // format: "branch upstream"
+
+      const result = await tool.getUntrackedBranches();
+
+      expect(result).toEqual(["feature1"]);
+    });
+
+    it("should handle empty upstream field", async () => {
+      tool.execCommand.mockResolvedValueOnce(
+        "feature1 \nfeature2   \nmain origin/main",
+      ); // format: "branch upstream" with whitespace
+
+      const result = await tool.getUntrackedBranches();
+
+      expect(result).toEqual(["feature1", "feature2"]);
     });
   });
 

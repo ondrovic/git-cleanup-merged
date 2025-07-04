@@ -243,6 +243,8 @@ Proceed with deletion of untracked branches? (y/N): y
 1. **Dependency Check**: Verifies you're in a Git repository and GitHub CLI is installed/authenticated
 2. **Current Branch Detection**: Identifies and protects your current working branch
 3. **Tracked Branch Discovery**: Lists only branches that have remote tracking (excluding `main`, `master`, current branch)
+   - Uses Git's upstream tracking information to accurately detect tracked branches
+   - Works with any remote name (origin, upstream, etc.) - not hard-coded to "origin"
 4. **PR Status Check**: Queries GitHub API for each branch's PR status with progress indication
 5. **Results Display**: Shows a comprehensive status table with clear visual indicators
 6. **Safe Deletion**: Only deletes branches with merged PRs (with user confirmation)
@@ -252,6 +254,8 @@ Proceed with deletion of untracked branches? (y/N): y
 1. **Dependency Check**: Verifies you're in a Git repository (GitHub CLI not required)
 2. **Current Branch Detection**: Identifies and protects your current working branch
 3. **Untracked Branch Discovery**: Lists only local branches without remote tracking (excluding `main`, `master`, current branch)
+   - Uses Git's upstream tracking information to accurately detect untracked branches
+   - Works with any remote name (origin, upstream, etc.) - not hard-coded to "origin"
 4. **Results Display**: Shows untracked branches with 🏷️ icon
 5. **Safe Deletion**: Deletes untracked branches (with user confirmation)
 
@@ -388,9 +392,10 @@ MIT License - see LICENSE file for details.
 - 🧠 **Improved UX**: Main mode now only shows tracked branches with PRs, untracked mode handles local-only branches
 - 🔧 **Smart Dependencies**: GitHub CLI only required for main mode, not for untracked mode
 - 💡 **Helpful Guidance**: Suggests `--untracked-only` when no tracked branches found in main mode
-- 🎯 **100% Test Coverage**: Achieved complete test coverage with 91 comprehensive test cases
-- 🐛 **Bug Fixes**: Fixed untracked branch detection logic and improved deletion feedback
+- 🎯 **100% Test Coverage**: Achieved complete test coverage with 95 comprehensive test cases
+- 🐛 **Bug Fixes**: Fixed branch tracking detection logic and improved deletion feedback
 - 📊 **Enhanced Testing**: Added tests for all new functionality and edge cases
+- 🔧 **Critical Fix**: Fixed branch tracking detection to use proper Git upstream relationships instead of hard-coded remote names
 
 ### v1.2.1
 
