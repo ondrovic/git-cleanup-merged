@@ -473,7 +473,7 @@ ${colors.bold}DIRECTORY (optional):${colors.reset}
 ${colors.bold}OPTIONS:${colors.reset}
     -n, --dry-run         Show what would be deleted without actually deleting
     -v, --verbose         Show detailed information during processing
-    --untracked-only      Only process untracked local branches (no remote tracking branch)
+    -u, --untracked-only  Only process untracked local branches (no remote tracking branch)
     -h, --help            Show this help message
 
 ${colors.bold}DESCRIPTION:${colors.reset}
@@ -494,7 +494,9 @@ ${colors.bold}EXAMPLES:${colors.reset}
     git-cleanup-merged --dry-run          # Preview what would be deleted
     git-cleanup-merged --verbose          # Show detailed processing info
     git-cleanup-merged --untracked-only   # Clean up untracked local branches only
+    git-cleanup-merged -u                 # Same as --untracked-only
     git-cleanup-merged --untracked-only --dry-run  # Preview untracked branches
+    git-cleanup-merged -u -n              # Same as above with shorthand
         `);
   }
 
@@ -521,6 +523,7 @@ ${colors.bold}EXAMPLES:${colors.reset}
           this.verbose = true;
           break;
         case "--untracked-only":
+        case "-u":
           this.untrackedOnly = true;
           break;
         case "--help":
