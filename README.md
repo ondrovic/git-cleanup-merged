@@ -161,14 +161,26 @@ git-cleanup-merged ../path/to/repo --dry-run --verbose
 # Clean up untracked branches (local branches without remote tracking)
 git-cleanup-merged --untracked-only
 
+# Same as above using shorthand
+git-cleanup-merged -u
+
 # Preview untracked branches (dry run)
 git-cleanup-merged --untracked-only --dry-run
+
+# Same as above using shorthand
+git-cleanup-merged -u -n
 
 # Show detailed processing for untracked branches
 git-cleanup-merged --untracked-only --verbose
 
+# Same as above using shorthand
+git-cleanup-merged -u -v
+
 # Clean up untracked branches in a different directory
 git-cleanup-merged ../path/to/repo --untracked-only
+
+# Same as above using shorthand
+git-cleanup-merged ../path/to/repo -u
 ```
 
 ### Command Line Options
@@ -178,7 +190,7 @@ git-cleanup-merged ../path/to/repo --untracked-only
 | `[DIRECTORY]`      |       | Path to a git repository to operate on. Defaults to the current directory if omitted |
 | `--dry-run`        | `-n`  | Show what would be deleted without actually deleting                                 |
 | `--verbose`        | `-v`  | Show detailed information during processing                                          |
-| `--untracked-only` |       | Only process untracked local branches (no remote tracking branch)                    |
+| `--untracked-only` | `-u`  | Only process untracked local branches (no remote tracking branch)                    |
 | `--help`           | `-h`  | Show help message                                                                    |
 
 ### Example Output
@@ -322,6 +334,9 @@ git-cleanup-merged --verbose --dry-run
 
 # Untracked mode with verbose output
 git-cleanup-merged --untracked-only --verbose --dry-run
+
+# Same as above using shorthand
+git-cleanup-merged -u -v -n
 ```
 
 ## Development
