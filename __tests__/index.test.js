@@ -477,17 +477,24 @@ describe("GitCleanupTool", () => {
     });
 
     it("should handle different PR statuses", async () => {
-      tool.getTrackedBranches.mockResolvedValue(["merged", "open", "none"]);
+      tool.getTrackedBranches.mockResolvedValue([
+        "merged",
+        "closed",
+        "open",
+        "none",
+      ]);
       tool.getPRStatus
         .mockResolvedValueOnce("MERGED")
+        .mockResolvedValueOnce("CLOSED")
         .mockResolvedValueOnce("OPEN")
         .mockResolvedValueOnce(null);
 
       await tool.checkBranches();
 
-      expect(tool.branchesToDelete).toEqual(["merged"]);
+      expect(tool.branchesToDelete).toEqual(["merged", "closed"]);
       expect(tool.prResults).toEqual([
         { branch: "merged", icon: "✅", label: "Merged" },
+        { branch: "closed", icon: "🔒", label: "Closed" },
         { branch: "open", icon: "⏳", label: "Open" },
         { branch: "none", icon: "❌", label: "No PR" },
       ]);
@@ -495,7 +502,7 @@ describe("GitCleanupTool", () => {
 
     it("should handle unknown PR status", async () => {
       tool.getTrackedBranches.mockResolvedValue(["unknown-status"]);
-      tool.getPRStatus.mockResolvedValue("CLOSED"); // Unknown status
+      tool.getPRStatus.mockResolvedValue("DRAFT"); // Unknown status
 
       await tool.checkBranches();
 
@@ -508,12 +515,12 @@ describe("GitCleanupTool", () => {
     it("should show unknown status in debug output when verbose", async () => {
       tool.verbose = true;
       tool.getTrackedBranches.mockResolvedValue(["unknown-status"]);
-      tool.getPRStatus.mockResolvedValue("CLOSED"); // Unknown status
+      tool.getPRStatus.mockResolvedValue("DRAFT"); // Unknown status
 
       await tool.checkBranches();
 
       expect(tool.spinner.debug).toHaveBeenCalledWith(
-        "Checking branch unknown-status -> PR state: CLOSED",
+        "Checking branch unknown-status -> PR state: DRAFT",
         true,
       );
       expect(tool.branchesToDelete).toEqual([]);
@@ -613,7 +620,7 @@ describe("GitCleanupTool", () => {
       await tool.deleteBranches();
 
       expect(tool.spinner.warning).toHaveBeenCalledWith(
-        "No branches with merged PRs found.",
+        "No branches with merged or closed PRs found.",
       );
     });
 
@@ -650,7 +657,7 @@ describe("GitCleanupTool", () => {
       await tool.deleteBranches();
 
       expect(tool.spinner.error).toHaveBeenCalledWith(
-        "The following branches have merged PRs and will be deleted:",
+        "The following branches have merged or closed PRs and will be deleted:",
       );
       expect(tool.askConfirmation).toHaveBeenCalledWith(
         "Proceed with deletion? (y/N): ",

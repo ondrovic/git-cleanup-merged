@@ -264,6 +264,11 @@ class GitCleanupTool {
           label = "Merged";
           this.branchesToDelete.push(branch);
           break;
+        case "CLOSED":
+          icon = "🔒";
+          label = "Closed";
+          this.branchesToDelete.push(branch);
+          break;
         case "OPEN":
           icon = "⏳";
           label = "Open";
@@ -358,7 +363,7 @@ class GitCleanupTool {
       if (this.untrackedOnly) {
         this.spinner.warning("No untracked local branches found.");
       } else {
-        this.spinner.warning("No branches with merged PRs found.");
+        this.spinner.warning("No branches with merged or closed PRs found.");
       }
       return;
     }
@@ -373,7 +378,7 @@ class GitCleanupTool {
         );
       } else {
         this.spinner.error(
-          "The following branches have merged PRs and will be deleted:",
+          "The following branches have merged or closed PRs and will be deleted:",
         );
       }
     }

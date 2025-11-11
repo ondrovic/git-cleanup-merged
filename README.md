@@ -29,7 +29,7 @@ A Node.js command-line tool that automatically identifies and deletes local Git 
 
 - 🔍 **Smart Detection**: Automatically checks GitHub PR status for tracked branches
 - 🏷️ **Untracked Branch Support**: Clean up local-only branches with `--untracked-only` mode
-- ✅ **Safe Deletion**: Only deletes branches with merged PRs or untracked branches
+- ✅ **Safe Deletion**: Only deletes branches with merged or closed PRs, or untracked branches
 - 🔒 **Protection**: Never deletes `main`, `master`, or your current branch
 - 👀 **Preview Mode**: Dry-run option to see what would be deleted
 - 📂 **Directory Support**: Operate on any git repo by passing a directory as the first argument
@@ -208,18 +208,21 @@ Branch                                   Icon   Status
 ────────────────────────────────────────────────────────────
 feature/user-authentication              ✅     Merged
 bugfix/header-layout                     ✅     Merged
+feature/experimental                     🔒     Closed
 feature/dark-mode                        ⏳     Open
 ────────────────────────────────────────────────────────────
 
-❌ The following branches have merged PRs and will be deleted:
+❌ The following branches have merged or closed PRs and will be deleted:
   feature/user-authentication
   bugfix/header-layout
+  feature/experimental
 
 Proceed with deletion? (y/N): y
 
 ✅ Deleted branch feature/user-authentication
 ✅ Deleted branch bugfix/header-layout
-✅ Successfully deleted 2 branches
+✅ Deleted branch feature/experimental
+✅ Successfully deleted 3 branches
 ```
 
 #### Untracked Mode - Local-only branches
@@ -260,7 +263,7 @@ Proceed with deletion of untracked branches? (y/N): y
    - Robust parsing handles multiple consecutive spaces in Git output
 4. **PR Status Check**: Queries GitHub API for each branch's PR status with progress indication
 5. **Results Display**: Shows a comprehensive status table with clear visual indicators
-6. **Safe Deletion**: Only deletes branches with merged PRs (with user confirmation)
+6. **Safe Deletion**: Only deletes branches with merged or closed PRs (with user confirmation)
 
 ### Untracked Mode (`--untracked-only`)
 
@@ -280,6 +283,7 @@ Proceed with deletion of untracked branches? (y/N): y
 | Icon | Status | Description                                            |
 | ---- | ------ | ------------------------------------------------------ |
 | ✅   | Merged | PR has been merged - branch is safe to delete          |
+| 🔒   | Closed | PR has been closed without merging - branch is safe to delete |
 | ⏳   | Open   | PR is still open - branch will be preserved            |
 | ❌   | No PR  | No PR found for this branch - branch will be preserved |
 
@@ -293,7 +297,7 @@ Proceed with deletion of untracked branches? (y/N): y
 
 - **Protected Branches**: Never touches `main`, `master`, or your current branch
 - **Confirmation Required**: Always asks before deleting (unless in dry-run mode)
-- **GitHub Verification**: Only deletes branches with confirmed merged PRs (main mode)
+- **GitHub Verification**: Only deletes branches with confirmed merged or closed PRs (main mode)
 - **Untracked Detection**: Only deletes local branches without remote tracking (untracked mode)
 - **Robust Parsing**: Handles various Git output formats including multiple consecutive spaces
 - **Error Handling**: Graceful failure handling with informative messages
