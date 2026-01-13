@@ -204,6 +204,25 @@ describe("GitCleanupTool", () => {
         silent: true,
       });
     });
+
+    it("should skip GitHub CLI checks in count-only mode", async () => {
+      tool.countOnly = true;
+      tool.execCommand.mockResolvedValueOnce(".git"); // git rev-parse --git-dir
+
+      await tool.checkDependencies();
+
+      expect(tool.spinner.updateMessage).toHaveBeenCalledWith(
+        "Checking dependencies...",
+      );
+      expect(tool.spinner.success).toHaveBeenCalledWith("Dependencies checked");
+      // Should not check GitHub CLI
+      expect(tool.execCommand).not.toHaveBeenCalledWith("gh --version", {
+        silent: true,
+      });
+      expect(tool.execCommand).not.toHaveBeenCalledWith("gh auth status", {
+        silent: true,
+      });
+    });
   });
 
   describe("getCurrentBranch method", () => {
@@ -398,6 +417,68 @@ describe("GitCleanupTool", () => {
       const result = await tool.getUntrackedBranches();
 
       expect(result).toEqual(["feature1"]);
+    });
+  });
+
+  describe("countBranches method", () => {
+    beforeEach(() => {
+      tool.getTrackedBranches = jest.fn();
+      tool.getUntrackedBranches = jest.fn();
+      tool.sleep = jest.fn();
+    });
+
+    it("should count branches and display summary", async () => {
+      tool.getTrackedBranches.mockResolvedValue(["feature1", "feature2"]);
+      tool.getUntrackedBranches.mockResolvedValue(["local1"]);
+
+      await tool.countBranches();
+
+      expect(tool.spinner.updateMessage).toHaveBeenCalledWith(
+        "Counting branches...",
+      );
+      expect(tool.spinner.start).toHaveBeenCalled();
+      expect(tool.spinner.success).toHaveBeenCalledWith("Branch count complete");
+      expect(console.log).toHaveBeenCalled();
+    });
+
+    it("should handle zero branches", async () => {
+      tool.getTrackedBranches.mockResolvedValue([]);
+      tool.getUntrackedBranches.mockResolvedValue([]);
+
+      await tool.countBranches();
+
+      expect(tool.spinner.success).toHaveBeenCalledWith("Branch count complete");
+    });
+
+    it("should handle only tracked branches", async () => {
+      tool.getTrackedBranches.mockResolvedValue(["feature1", "feature2", "feature3"]);
+      tool.getUntrackedBranches.mockResolvedValue([]);
+
+      await tool.countBranches();
+
+      expect(tool.getTrackedBranches).toHaveBeenCalled();
+      expect(tool.getUntrackedBranches).toHaveBeenCalled();
+      expect(tool.spinner.success).toHaveBeenCalledWith("Branch count complete");
+    });
+
+    it("should handle only untracked branches", async () => {
+      tool.getTrackedBranches.mockResolvedValue([]);
+      tool.getUntrackedBranches.mockResolvedValue(["local1", "local2"]);
+
+      await tool.countBranches();
+
+      expect(tool.getTrackedBranches).toHaveBeenCalled();
+      expect(tool.getUntrackedBranches).toHaveBeenCalled();
+      expect(tool.spinner.success).toHaveBeenCalledWith("Branch count complete");
+    });
+
+    it("should call sleep for minimum spinner visibility", async () => {
+      tool.getTrackedBranches.mockResolvedValue(["feature1"]);
+      tool.getUntrackedBranches.mockResolvedValue(["local1"]);
+
+      await tool.countBranches();
+
+      expect(tool.sleep).toHaveBeenCalledWith(300);
     });
   });
 
@@ -850,6 +931,30 @@ describe("GitCleanupTool", () => {
       expect(tool.verbose).toBe(true);
     });
 
+    it("should parse count flag", () => {
+      process.argv = ["node", "script.js", "--count"];
+
+      tool.parseArguments();
+
+      expect(tool.countOnly).toBe(true);
+    });
+
+    it("should parse count short flag", () => {
+      process.argv = ["node", "script.js", "-c"];
+
+      tool.parseArguments();
+
+      expect(tool.countOnly).toBe(true);
+    });
+
+    it("should parse untracked-only short flag", () => {
+      process.argv = ["node", "script.js", "-u"];
+
+      tool.parseArguments();
+
+      expect(tool.untrackedOnly).toBe(true);
+    });
+
     it("should show help and return undefined for help flag", () => {
       process.argv = ["node", "script.js", "--help"];
 
@@ -992,6 +1097,18 @@ describe("GitCleanupTool", () => {
 
       expect(tool.checkUntrackedBranches).toHaveBeenCalled();
       expect(tool.checkBranches).not.toHaveBeenCalled();
+    });
+
+    it("should run in count-only mode and exit early", async () => {
+      tool.countOnly = true;
+      tool.countBranches = jest.fn();
+
+      await tool.run();
+
+      expect(tool.countBranches).toHaveBeenCalled();
+      expect(tool.checkBranches).not.toHaveBeenCalled();
+      expect(tool.displayResults).not.toHaveBeenCalled();
+      expect(tool.deleteBranches).not.toHaveBeenCalled();
     });
 
     it("should handle errors from getCurrentBranch", async () => {

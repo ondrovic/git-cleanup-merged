@@ -21,6 +21,7 @@ class GitCleanupTool {
     this.dryRun = false;
     this.verbose = false;
     this.untrackedOnly = false;
+    this.countOnly = false;
     this.branchesToDelete = [];
     this.prResults = [];
     this.currentBranch = "";
@@ -62,8 +63,8 @@ class GitCleanupTool {
     }
     await this.sleep(300); // Minimum spinner time
 
-    // Only check GitHub CLI dependencies if not in untracked-only mode
-    if (!this.untrackedOnly) {
+    // Only check GitHub CLI dependencies if not in untracked-only or count-only mode
+    if (!this.untrackedOnly && !this.countOnly) {
       this.spinner.updateMessage("Checking GitHub CLI...");
       // Check for GitHub CLI
       if ((await this.execCommand("gh --version", { silent: true })) === null) {
@@ -203,6 +204,24 @@ class GitCleanupTool {
       this.spinner.error("Failed to get untracked branches");
       return [];
     }
+  }
+
+  async countBranches() {
+    this.spinner.updateMessage("Counting branches...");
+    this.spinner.start();
+
+    const trackedBranches = await this.getTrackedBranches();
+    const untrackedBranches = await this.getUntrackedBranches();
+    const total = trackedBranches.length + untrackedBranches.length;
+
+    await this.sleep(300); // Minimum spinner time
+    this.spinner.success("Branch count complete");
+
+    console.log("");
+    console.log(`${colors.bold}📊 Branch Count Summary${colors.reset}`);
+    console.log(`  Total branches: ${total}`);
+    console.log(`  Tracked: ${trackedBranches.length}`);
+    console.log(`  Untracked: ${untrackedBranches.length}`);
   }
 
   async getPRStatus(branch) {
@@ -479,6 +498,7 @@ ${colors.bold}OPTIONS:${colors.reset}
     -n, --dry-run         Show what would be deleted without actually deleting
     -v, --verbose         Show detailed information during processing
     -u, --untracked-only  Only process untracked local branches (no remote tracking branch)
+    -c, --count           Display branch count summary and exit (no deletion)
     -h, --help            Show this help message
 
 ${colors.bold}DESCRIPTION:${colors.reset}
@@ -502,6 +522,8 @@ ${colors.bold}EXAMPLES:${colors.reset}
     git-cleanup-merged -u                 # Same as --untracked-only
     git-cleanup-merged --untracked-only --dry-run  # Preview untracked branches
     git-cleanup-merged -u -n              # Same as above with shorthand
+    git-cleanup-merged --count            # Display branch count summary
+    git-cleanup-merged -c                 # Same as --count
         `);
   }
 
@@ -531,6 +553,10 @@ ${colors.bold}EXAMPLES:${colors.reset}
         case "-u":
           this.untrackedOnly = true;
           break;
+        case "--count":
+        case "-c":
+          this.countOnly = true;
+          break;
         case "--help":
         case "-h":
           this.showHelp();
@@ -554,6 +580,12 @@ ${colors.bold}EXAMPLES:${colors.reset}
       this.parseArguments();
       await this.checkDependencies();
       await this.getCurrentBranch();
+
+      // Handle count-only mode and exit early
+      if (this.countOnly) {
+        await this.countBranches();
+        return;
+      }
 
       if (this.untrackedOnly) {
         await this.checkUntrackedBranches();
