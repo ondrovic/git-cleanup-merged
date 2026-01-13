@@ -27,6 +27,12 @@
     "node": ">=18.0.0"
   },
   "preferGlobal": true,
+  "files": [
+    "src/**/*.js",
+    "index.js",
+    "README.md",
+    "LICENSE"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/ondro/git-cleanup-merged.git"
