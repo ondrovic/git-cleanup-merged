@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml/badge.svg)](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/ondrovic/git-cleanup-merged/graph/badge.svg?token=x3cYga3d2E)](https://codecov.io/gh/ondrovic/git-cleanup-merged)
+[![Publish to NPM](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/publish.yml/badge.svg)](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/publish.yml)
+[![npm version](https://img.shields.io/npm/v/git-cleanup-merged.svg)](https://www.npmjs.com/package/git-cleanup-merged)
 
 A Node.js command-line tool that automatically identifies and deletes local Git branches that have been merged via GitHub Pull Requests.
 
