@@ -192,6 +192,8 @@ git-cleanup-merged ../path/to/repo -u
 | `--dry-run`        | `-n`  | Show what would be deleted without actually deleting                                 |
 | `--verbose`        | `-v`  | Show detailed information during processing                                          |
 | `--untracked-only` | `-u`  | Only process untracked local branches (no remote tracking branch)                    |
+| `--count`          | `-c`  | Display branch count summary and exit (no deletion)                                  |
+| `--version`        | `-V`  | Show version information                                                             |
 | `--help`           | `-h`  | Show help message                                                                    |
 
 ### Example Output

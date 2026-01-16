@@ -90,6 +90,7 @@ describe("GitCleanupTool", () => {
       expect(execSync).toHaveBeenCalledWith("test command", {
         encoding: "utf8",
         stdio: "inherit",
+        timeout: 30000,
       });
       expect(result).toBe("test output");
     });
@@ -103,11 +104,36 @@ describe("GitCleanupTool", () => {
         encoding: "utf8",
         stdio: "pipe",
         silent: true,
+        timeout: 30000,
       });
       expect(result).toBe("test output");
     });
 
-    it("should return null when command fails with silent option", async () => {
+    it("should return '__TIMEOUT__' when command times out with silent option", async () => {
+      execSync.mockImplementation(() => {
+        const err = new Error("Command timed out");
+        err.code = "ETIMEDOUT";
+        throw err;
+      });
+
+      const result = await tool.execCommand("test command", { silent: true });
+
+      expect(result).toBe("__TIMEOUT__");
+    });
+
+    it("should return '__TIMEOUT__' when command is terminated with SIGTERM (timeout)", async () => {
+      execSync.mockImplementation(() => {
+        const err = new Error("Command terminated");
+        err.signal = "SIGTERM";
+        throw err;
+      });
+
+      const result = await tool.execCommand("test command", { silent: true });
+
+      expect(result).toBe("__TIMEOUT__");
+    });
+
+    it("should return null when command fails with silent option (not a timeout)", async () => {
       execSync.mockImplementation(() => {
         throw new Error("Command failed");
       });
@@ -115,6 +141,12 @@ describe("GitCleanupTool", () => {
       const result = await tool.execCommand("test command", { silent: true });
 
       expect(result).toBeNull();
+    });
+
+    it("should support custom timeout in execCommand", async () => {
+      execSync.mockReturnValue("ok");
+      await tool.execCommand("cmd", { timeout: 5000 });
+      expect(execSync).toHaveBeenCalledWith("cmd", expect.objectContaining({ timeout: 5000 }));
     });
 
     it("should throw error when command fails without silent option", async () => {
@@ -159,6 +191,17 @@ describe("GitCleanupTool", () => {
       expect(process.exit).toHaveBeenCalledWith(1);
     });
 
+    it("should exit when git repository check times out", async () => {
+      tool.execCommand.mockResolvedValueOnce("__TIMEOUT__"); // git rev-parse --git-dir times out
+
+      await tool.checkDependencies();
+
+      expect(tool.spinner.error).toHaveBeenCalledWith(
+        "Git repository check timed out",
+      );
+      expect(process.exit).toHaveBeenCalledWith(1);
+    });
+
     it("should exit when GitHub CLI is not installed", async () => {
       tool.execCommand
         .mockResolvedValueOnce(".git") // git rev-parse --git-dir
@@ -168,6 +211,19 @@ describe("GitCleanupTool", () => {
 
       expect(tool.spinner.error).toHaveBeenCalledWith(
         "GitHub CLI (gh) is not installed. Please install it from https://cli.github.com/",
+      );
+      expect(process.exit).toHaveBeenCalledWith(1);
+    });
+
+    it("should exit when GitHub CLI check times out", async () => {
+      tool.execCommand
+        .mockResolvedValueOnce(".git") // git rev-parse --git-dir
+        .mockResolvedValueOnce("__TIMEOUT__"); // gh --version times out
+
+      await tool.checkDependencies();
+
+      expect(tool.spinner.error).toHaveBeenCalledWith(
+        "GitHub CLI check timed out. Please check your connection.",
       );
       expect(process.exit).toHaveBeenCalledWith(1);
     });
@@ -182,6 +238,20 @@ describe("GitCleanupTool", () => {
 
       expect(tool.spinner.error).toHaveBeenCalledWith(
         "GitHub CLI is not authenticated. Run: gh auth login",
+      );
+      expect(process.exit).toHaveBeenCalledWith(1);
+    });
+
+    it("should exit when GitHub authentication check times out", async () => {
+      tool.execCommand
+        .mockResolvedValueOnce(".git") // git rev-parse --git-dir
+        .mockResolvedValueOnce("gh version 2.0.0") // gh --version
+        .mockResolvedValueOnce("__TIMEOUT__"); // gh auth status times out
+
+      await tool.checkDependencies();
+
+      expect(tool.spinner.error).toHaveBeenCalledWith(
+        "GitHub authentication check timed out. Please check your connection.",
       );
       expect(process.exit).toHaveBeenCalledWith(1);
     });
@@ -253,6 +323,28 @@ describe("GitCleanupTool", () => {
       );
       expect(process.exit).toHaveBeenCalledWith(1);
     });
+
+    it("should exit when getCurrentBranch returns null", async () => {
+      tool.execCommand.mockResolvedValue(null);
+
+      await tool.getCurrentBranch();
+
+      expect(tool.spinner.error).toHaveBeenCalledWith(
+        "Failed to get current branch",
+      );
+      expect(process.exit).toHaveBeenCalledWith(1);
+    });
+
+    it("should exit when getCurrentBranch times out", async () => {
+      tool.execCommand.mockResolvedValue("__TIMEOUT__");
+
+      await tool.getCurrentBranch();
+
+      expect(tool.spinner.error).toHaveBeenCalledWith(
+        "Failed to get current branch (timeout)",
+      );
+      expect(process.exit).toHaveBeenCalledWith(1);
+    });
   });
 
   describe("getLocalBranches method", () => {
@@ -292,6 +384,28 @@ describe("GitCleanupTool", () => {
       expect(result).toEqual([]);
       expect(tool.spinner.error).toHaveBeenCalledWith(
         "Failed to get all branches",
+      );
+    });
+
+    it("should return empty array when execCommand returns null", async () => {
+      tool.execCommand.mockResolvedValue(null);
+
+      const result = await tool.getLocalBranches();
+
+      expect(result).toEqual([]);
+      expect(tool.spinner.error).toHaveBeenCalledWith(
+        "Failed to get all branches",
+      );
+    });
+
+    it("should return empty array when execCommand times out", async () => {
+      tool.execCommand.mockResolvedValue("__TIMEOUT__");
+
+      const result = await tool.getLocalBranches();
+
+      expect(result).toEqual([]);
+      expect(tool.spinner.error).toHaveBeenCalledWith(
+        "Failed to get all branches (timeout)",
       );
     });
 
@@ -340,6 +454,28 @@ describe("GitCleanupTool", () => {
       expect(result).toEqual([]);
     });
 
+    it("should return empty array when execCommand returns null", async () => {
+      tool.execCommand.mockResolvedValue(null);
+
+      const result = await tool.getTrackedBranches();
+
+      expect(result).toEqual([]);
+      expect(tool.spinner.error).toHaveBeenCalledWith(
+        "Failed to get tracked branches",
+      );
+    });
+
+    it("should return empty array when execCommand times out for tracked branches", async () => {
+      tool.execCommand.mockResolvedValue("__TIMEOUT__");
+
+      const result = await tool.getTrackedBranches();
+
+      expect(result).toEqual([]);
+      expect(tool.spinner.error).toHaveBeenCalledWith(
+        "Failed to get tracked branches (timeout)",
+      );
+    });
+
     it("should handle error in getUntrackedBranches mode", async () => {
       tool.execCommand.mockRejectedValue(new Error("Failed"));
 
@@ -349,6 +485,28 @@ describe("GitCleanupTool", () => {
         "Failed to get untracked branches",
       );
       expect(result).toEqual([]);
+    });
+
+    it("should return empty array when execCommand returns null for untracked branches", async () => {
+      tool.execCommand.mockResolvedValue(null);
+
+      const result = await tool.getUntrackedBranches();
+
+      expect(result).toEqual([]);
+      expect(tool.spinner.error).toHaveBeenCalledWith(
+        "Failed to get untracked branches",
+      );
+    });
+
+    it("should return empty array when execCommand times out for untracked branches", async () => {
+      tool.execCommand.mockResolvedValue("__TIMEOUT__");
+
+      const result = await tool.getUntrackedBranches();
+
+      expect(result).toEqual([]);
+      expect(tool.spinner.error).toHaveBeenCalledWith(
+        "Failed to get untracked branches (timeout)",
+      );
     });
 
     it("should handle error in getLocalBranches mode", async () => {
@@ -525,7 +683,7 @@ describe("GitCleanupTool", () => {
 
       expect(tool.execCommand).toHaveBeenCalledWith(
         'gh pr view "feature1" --json state --jq .state',
-        { silent: true },
+        { silent: true, timeout: 10000 },
       );
       expect(result).toBe("MERGED");
     });
@@ -594,12 +752,14 @@ describe("GitCleanupTool", () => {
         "closed",
         "open",
         "none",
+        "timedout",
       ]);
       tool.getPRStatus
         .mockResolvedValueOnce("MERGED")
         .mockResolvedValueOnce("CLOSED")
         .mockResolvedValueOnce("OPEN")
-        .mockResolvedValueOnce(null);
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce("__TIMEOUT__");
 
       await tool.checkBranches();
 
@@ -609,6 +769,7 @@ describe("GitCleanupTool", () => {
         { branch: "closed", icon: "🔒", label: "Closed" },
         { branch: "open", icon: "⏳", label: "Open" },
         { branch: "none", icon: "❌", label: "No PR" },
+        { branch: "timedout", icon: "❓", label: "Timeout" },
       ]);
     });
 
@@ -632,7 +793,7 @@ describe("GitCleanupTool", () => {
       await tool.checkBranches();
 
       expect(tool.spinner.debug).toHaveBeenCalledWith(
-        "Checking branch unknown-status -> PR state: DRAFT",
+        "Checking 'unknown-status' -> PR state: DRAFT",
         true,
       );
       expect(tool.branchesToDelete).toEqual([]);
@@ -649,7 +810,7 @@ describe("GitCleanupTool", () => {
       await tool.checkBranches();
 
       expect(tool.spinner.debug).toHaveBeenCalledWith(
-        "Checking branch null-status -> PR state: unknown",
+        "Checking 'null-status' -> PR state: unknown",
         true,
       );
       expect(tool.branchesToDelete).toEqual([]);
@@ -671,6 +832,67 @@ describe("GitCleanupTool", () => {
       expect(tool.spinner.success).toHaveBeenCalledWith(
         "Finished checking 6 tracked branches",
       );
+    });
+
+    it("should continue processing other branches when one branch fails", async () => {
+      const branches = ["b1", "b2", "b3"];
+      tool.getTrackedBranches.mockResolvedValue(branches);
+      // First branch throws an error, others succeed
+      tool.getPRStatus
+        .mockRejectedValueOnce(new Error("Network error"))
+        .mockResolvedValueOnce("MERGED")
+        .mockResolvedValueOnce("OPEN");
+
+      await tool.checkBranches();
+
+      // Should process all branches despite the error
+      expect(tool.prResults).toHaveLength(3);
+      // First branch should have error icon
+      expect(tool.prResults[0]).toEqual({
+        branch: "b1",
+        icon: "⚠️",
+        label: "Error",
+      });
+      // Other branches should be processed normally
+      expect(tool.prResults[1]).toEqual({
+        branch: "b2",
+        icon: "✅",
+        label: "Merged",
+      });
+      expect(tool.prResults[2]).toEqual({
+        branch: "b3",
+        icon: "⏳",
+        label: "Open",
+      });
+      // Should still complete successfully
+      expect(tool.spinner.success).toHaveBeenCalledWith(
+        "Finished checking 3 tracked branches",
+      );
+    });
+
+    it("should log error details in verbose mode when branch processing fails", async () => {
+      tool.verbose = true;
+      const branches = ["error-branch", "success-branch"];
+      tool.getTrackedBranches.mockResolvedValue(branches);
+      // First branch throws an error, second succeeds
+      tool.getPRStatus
+        .mockRejectedValueOnce(new Error("Network timeout"))
+        .mockResolvedValueOnce("MERGED");
+
+      await tool.checkBranches();
+
+      // Should log error in verbose mode
+      expect(tool.spinner.debug).toHaveBeenCalledWith(
+        "Error checking 'error-branch': Network timeout",
+        true,
+      );
+      // Should still process all branches
+      expect(tool.prResults).toHaveLength(2);
+      expect(tool.prResults[0]).toEqual({
+        branch: "error-branch",
+        icon: "⚠️",
+        label: "Error",
+      });
     });
   });
 
@@ -896,6 +1118,60 @@ describe("GitCleanupTool", () => {
         "Successfully deleted 4 branches",
       );
     });
+
+    it("should treat timeout as failure when deleting branches", async () => {
+      tool.branchesToDelete = ["branch1", "branch2"];
+      tool.askConfirmation.mockResolvedValue(true);
+      // First branch times out, second succeeds
+      tool.execCommand
+        .mockResolvedValueOnce("__TIMEOUT__")
+        .mockResolvedValueOnce("");
+
+      await tool.deleteBranches();
+
+      expect(tool.execCommand).toHaveBeenCalledTimes(2);
+      // Should log timeout failure for first branch
+      expect(tool.spinner.log).toHaveBeenCalledWith(
+        expect.stringContaining("❌ Failed to delete branch branch1 (timeout)"),
+        expect.anything(),
+      );
+      // Should log success for second branch
+      expect(tool.spinner.log).toHaveBeenCalledWith(
+        expect.stringContaining("✅ Deleted branch branch2"),
+        expect.anything(),
+      );
+      // Should show warning with 1 failed, 1 deleted
+      expect(tool.spinner.warning).toHaveBeenCalledWith(
+        "Deleted 1 branches, 1 failed",
+      );
+    });
+
+    it("should treat null return value as failure when deleting branches", async () => {
+      tool.branchesToDelete = ["branch1", "branch2"];
+      tool.askConfirmation.mockResolvedValue(true);
+      // First branch fails (returns null), second succeeds
+      tool.execCommand
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce("");
+
+      await tool.deleteBranches();
+
+      expect(tool.execCommand).toHaveBeenCalledTimes(2);
+      // Should log failure for first branch
+      expect(tool.spinner.log).toHaveBeenCalledWith(
+        expect.stringContaining("❌ Failed to delete branch branch1"),
+        expect.anything(),
+      );
+      // Should log success for second branch
+      expect(tool.spinner.log).toHaveBeenCalledWith(
+        expect.stringContaining("✅ Deleted branch branch2"),
+        expect.anything(),
+      );
+      // Should show warning with 1 failed, 1 deleted
+      expect(tool.spinner.warning).toHaveBeenCalledWith(
+        "Deleted 1 branches, 1 failed",
+      );
+    });
   });
 
   describe("askConfirmation method", () => {
@@ -1039,6 +1315,24 @@ describe("GitCleanupTool", () => {
       tool.parseArguments();
 
       expect(tool.untrackedOnly).toBe(true);
+    });
+
+    it("should show version and return 0 for version flag", () => {
+      process.argv = ["node", "script.js", "--version"];
+
+      const result = tool.parseArguments();
+
+      expect(console.log).toHaveBeenCalledWith(tool.version);
+      expect(result).toBe(0);
+    });
+
+    it("should show version and return 0 for version short flag", () => {
+      process.argv = ["node", "script.js", "-V"];
+
+      const result = tool.parseArguments();
+
+      expect(console.log).toHaveBeenCalledWith(tool.version);
+      expect(result).toBe(0);
     });
 
     it("should show help and return undefined for help flag", () => {
@@ -1192,6 +1486,32 @@ describe("GitCleanupTool", () => {
       await tool.run();
 
       expect(tool.countBranches).toHaveBeenCalled();
+      expect(tool.checkBranches).not.toHaveBeenCalled();
+      expect(tool.displayResults).not.toHaveBeenCalled();
+      expect(tool.deleteBranches).not.toHaveBeenCalled();
+    });
+
+    it("should exit early when parseArguments returns 0 (version flag)", async () => {
+      tool.parseArguments.mockReturnValue(0);
+
+      await tool.run();
+
+      expect(tool.parseArguments).toHaveBeenCalled();
+      expect(tool.checkDependencies).not.toHaveBeenCalled();
+      expect(tool.getCurrentBranch).not.toHaveBeenCalled();
+      expect(tool.checkBranches).not.toHaveBeenCalled();
+      expect(tool.displayResults).not.toHaveBeenCalled();
+      expect(tool.deleteBranches).not.toHaveBeenCalled();
+    });
+
+    it("should exit early when parseArguments returns 0 (help flag)", async () => {
+      tool.parseArguments.mockReturnValue(0);
+
+      await tool.run();
+
+      expect(tool.parseArguments).toHaveBeenCalled();
+      expect(tool.checkDependencies).not.toHaveBeenCalled();
+      expect(tool.getCurrentBranch).not.toHaveBeenCalled();
       expect(tool.checkBranches).not.toHaveBeenCalled();
       expect(tool.displayResults).not.toHaveBeenCalled();
       expect(tool.deleteBranches).not.toHaveBeenCalled();

@@ -26,6 +26,7 @@ class GitCleanupTool {
     this.prResults = [];
     this.currentBranch = "";
     this.spinner = new Spinner();
+    this.version = require("../package.json").version;
   }
 
   // Helper method for minimum spinner visibility
@@ -35,15 +36,21 @@ class GitCleanupTool {
 
   async execCommand(command, options = {}) {
     try {
+      const timeout = options.timeout || 30000; // Default 30s timeout
       const result = execSync(command, {
         encoding: "utf8",
         stdio: options.silent ? "pipe" : "inherit",
+        timeout: timeout,
         ...options,
       });
       return result.trim();
     } catch (error) {
       if (!options.silent) {
         throw error;
+      }
+      // If it's a timeout, return a specific error or indicator
+      if (error.code === "ETIMEDOUT" || error.signal === "SIGTERM") {
+        return "__TIMEOUT__";
       }
       return null;
     }
@@ -54,11 +61,15 @@ class GitCleanupTool {
     this.spinner.start();
 
     // Check if we're in a git repository
-    if (
-      (await this.execCommand("git rev-parse --git-dir", { silent: true })) ===
-      null
-    ) {
-      this.spinner.error("Not in a git repository");
+    const gitDirResult = await this.execCommand("git rev-parse --git-dir", {
+      silent: true,
+    });
+    if (gitDirResult === null || gitDirResult === "__TIMEOUT__") {
+      if (gitDirResult === "__TIMEOUT__") {
+        this.spinner.error("Git repository check timed out");
+      } else {
+        this.spinner.error("Not in a git repository");
+      }
       process.exit(1);
     }
     await this.sleep(300); // Minimum spinner time
@@ -67,22 +78,38 @@ class GitCleanupTool {
     if (!this.untrackedOnly && !this.countOnly) {
       this.spinner.updateMessage("Checking GitHub CLI...");
       // Check for GitHub CLI
-      if ((await this.execCommand("gh --version", { silent: true })) === null) {
-        this.spinner.error(
-          "GitHub CLI (gh) is not installed. Please install it from https://cli.github.com/",
-        );
+      const ghVersionResult = await this.execCommand("gh --version", {
+        silent: true,
+      });
+      if (ghVersionResult === null || ghVersionResult === "__TIMEOUT__") {
+        if (ghVersionResult === "__TIMEOUT__") {
+          this.spinner.error(
+            "GitHub CLI check timed out. Please check your connection.",
+          );
+        } else {
+          this.spinner.error(
+            "GitHub CLI (gh) is not installed. Please install it from https://cli.github.com/",
+          );
+        }
         process.exit(1);
       }
       await this.sleep(200);
 
       this.spinner.updateMessage("Verifying GitHub authentication...");
       // Check GitHub CLI authentication
-      if (
-        (await this.execCommand("gh auth status", { silent: true })) === null
-      ) {
-        this.spinner.error(
-          "GitHub CLI is not authenticated. Run: gh auth login",
-        );
+      const authStatusResult = await this.execCommand("gh auth status", {
+        silent: true,
+      });
+      if (authStatusResult === null || authStatusResult === "__TIMEOUT__") {
+        if (authStatusResult === "__TIMEOUT__") {
+          this.spinner.error(
+            "GitHub authentication check timed out. Please check your connection.",
+          );
+        } else {
+          this.spinner.error(
+            "GitHub CLI is not authenticated. Run: gh auth login",
+          );
+        }
         process.exit(1);
       }
       await this.sleep(200);
@@ -96,9 +123,19 @@ class GitCleanupTool {
     this.spinner.start();
 
     try {
-      this.currentBranch = await this.execCommand("git branch --show-current", {
+      const branchResult = await this.execCommand("git branch --show-current", {
         silent: true,
       });
+      // Check if command failed or timed out
+      if (branchResult === null || branchResult === "__TIMEOUT__") {
+        if (branchResult === "__TIMEOUT__") {
+          this.spinner.error("Failed to get current branch (timeout)");
+        } else {
+          this.spinner.error("Failed to get current branch");
+        }
+        process.exit(1);
+      }
+      this.currentBranch = branchResult;
       await this.sleep(200); // Let the spinner show
       this.spinner.success(`Current branch: ${this.currentBranch}`);
     } catch {
@@ -114,6 +151,16 @@ class GitCleanupTool {
         'git for-each-ref --format="%(refname:short) %(upstream:short)" refs/heads/',
         { silent: true },
       );
+
+      // Check if execCommand returned null or timed out (command failed)
+      if (branches === null || branches === "__TIMEOUT__") {
+        if (branches === "__TIMEOUT__") {
+          this.spinner.error(`Failed to get ${mode} branches (timeout)`);
+        } else {
+          this.spinner.error(`Failed to get ${mode} branches`);
+        }
+        return [];
+      }
 
       const result = [];
       const branchLines = branches
@@ -182,7 +229,7 @@ class GitCleanupTool {
     try {
       return await this.execCommand(
           `gh pr view "${branch}" --json state --jq .state`,
-          {silent: true},
+          {silent: true, timeout: 10000}, // 10s timeout for PR status
       );
     } catch {
       return null;
@@ -206,64 +253,127 @@ class GitCleanupTool {
     this.spinner.updateMessage(
       `Checking ${branches.length} tracked branches against GitHub...`,
     );
+    this.spinner.start(); // Ensure spinner is running before workers start
+    await this.sleep(150); // Give spinner time to display initial message
 
     // Limit concurrency to avoid hitting GitHub API rate limits
     const CONCURRENCY_LIMIT = 5;
-    const results = [];
+    // Use Map to store results by branch name to preserve input order
+    const resultsMap = new Map();
+    const totalBranches = branches.length;
     
-    for (let i = 0; i < branches.length; i += CONCURRENCY_LIMIT) {
-      const chunk = branches.slice(i, i + CONCURRENCY_LIMIT);
-      const chunkPromises = chunk.map(async (branch, index) => {
-        const branchIndex = i + index + 1;
-        this.spinner.updateMessage(
-          `Checking branch ${branchIndex}/${branches.length}: ${branch}`,
+    // Atomic counter for branch index tracking
+    let nextIndex = 0;
+    
+    // Function to get next branch index atomically
+    const getNextBranchIndex = () => {
+      if (nextIndex >= totalBranches) {
+        return null;
+      }
+      return nextIndex++;
+    };
+    
+    // Synchronized array for branches to delete to avoid race conditions
+    const branchesToDeleteSync = [];
+    const addBranchToDelete = (branch) => {
+      branchesToDeleteSync.push(branch);
+    };
+    
+    const processBranch = async (branchIndex) => {
+      const branch = branches[branchIndex];
+      
+      // Update the spinner message as we start checking this branch
+      this.spinner.updateMessage(
+        `Checking '${branch}'`,
+      );
+      this.spinner.start();
+      
+      const prStatus = await this.getPRStatus(branch);
+      
+      if (this.verbose) {
+        this.spinner.debug(
+          `Checking '${branch}' -> PR state: ${prStatus || "unknown"}`,
+          this.verbose,
         );
-        
-        const prStatus = await this.getPRStatus(branch);
-        
-        if (this.verbose) {
-          this.spinner.debug(
-            `Checking branch ${branch} -> PR state: ${prStatus || "unknown"}`,
-            this.verbose,
-          );
-        }
-        
-        let icon, label;
-        switch (prStatus) {
-          case "MERGED":
-            icon = "✅";
-            label = "Merged";
-            this.branchesToDelete.push(branch);
-            break;
-          case "CLOSED":
-            icon = "🔒";
-            label = "Closed";
-            this.branchesToDelete.push(branch);
-            break;
-          case "OPEN":
-            icon = "⏳";
-            label = "Open";
-            break;
-          default:
-            icon = "❌";
-            label = "No PR";
-            break;
-        }
-        
-        return { branch, icon, label };
-      });
+        // Restart spinner after debug output stops it
+        this.spinner.updateMessage(
+          `Checking '${branch}'`,
+        );
+        this.spinner.start();
+      }
       
-      const chunkResults = await Promise.all(chunkPromises);
-      results.push(...chunkResults);
+      let icon, label;
+      switch (prStatus) {
+        case "MERGED":
+          icon = "✅";
+          label = "Merged";
+          addBranchToDelete(branch);
+          break;
+        case "CLOSED":
+          icon = "🔒";
+          label = "Closed";
+          addBranchToDelete(branch);
+          break;
+        case "OPEN":
+          icon = "⏳";
+          label = "Open";
+          break;
+        case "__TIMEOUT__":
+          icon = "❓";
+          label = "Timeout";
+          break;
+        default:
+          icon = "❌";
+          label = "No PR";
+          break;
+      }
       
-      // Small delay between chunks
-      await this.sleep(100);
-    }
+      resultsMap.set(branch, { branch, icon, label });
+    };
+    
+    const fluidWorker = async () => {
+      while (true) {
+        const branchIndex = getNextBranchIndex();
+        if (branchIndex === null) {
+          break; // No more branches to process
+        }
+        try {
+          await processBranch(branchIndex);
+        } catch (error) {
+          // Handle errors gracefully - one failed branch shouldn't stop the entire operation
+          const branch = branches[branchIndex];
+          // Store error result for this branch
+          resultsMap.set(branch, {
+            branch,
+            icon: "⚠️",
+            label: "Error",
+          });
+          // Log error if verbose mode is enabled
+          if (this.verbose) {
+            this.spinner.debug(
+              `Error checking '${branch}': ${error.message}`,
+              this.verbose,
+            );
+          }
+        }
+      }
+    };
 
-    this.prResults = results;
+    const workers = Array(Math.min(CONCURRENCY_LIMIT, totalBranches))
+      .fill(null)
+      .map(() => fluidWorker());
+
+    // Wait for all concurrent workers to finish
+    await Promise.all(workers);
+
+    // Reconstruct results array in the original input order
+    this.prResults = branches.map((branch) => resultsMap.get(branch));
+    
+    // Copy synchronized branches to delete array after all workers complete
+    this.branchesToDelete = branchesToDeleteSync;
 
     this.spinner.success(
-      `Finished checking ${branches.length} tracked branches`,
+      `Finished checking ${totalBranches} tracked branches`,
     );
     console.log(""); // Empty line for spacing
   }
@@ -387,50 +497,104 @@ class GitCleanupTool {
     if (confirmed) {
       console.log(""); // Empty line for spacing
 
-      let deletedCount = 0;
-      let failedBranches = [];
-
       // Concurrency limit for deletion as well
       const DELETE_CONCURRENCY = 3;
+      let deletedCount = 0;
+      const failedBranchesSync = [];
+      const branchesToDeleteCopy = [...this.branchesToDelete];
+      const totalToDelete = this.branchesToDelete.length;
+      // Use atomic counter to avoid race conditions with concurrent workers
+      // The counter object ensures the increment operation is atomic
+      const deletionCounter = { value: 0 };
+      const getNextDeletionProgress = () => {
+        // Increment and return in a single synchronous operation
+        return ++deletionCounter.value;
+      };
+      
+      // Atomic function to get next branch index to avoid race conditions
+      let nextDeleteIndex = 0;
+      const getNextDeleteBranch = () => {
+        if (nextDeleteIndex >= branchesToDeleteCopy.length) {
+          return null;
+        }
+        return branchesToDeleteCopy[nextDeleteIndex++];
+      };
+      
+      // Synchronized function to add failed branch
+      const addFailedBranch = (branch) => {
+        failedBranchesSync.push(branch);
+      };
+      
+      // Synchronized function to increment deleted count
+      const incrementDeletedCount = () => {
+        deletedCount++;
+      };
 
-      for (let i = 0; i < this.branchesToDelete.length; i += DELETE_CONCURRENCY) {
-        const chunk = this.branchesToDelete.slice(i, i + DELETE_CONCURRENCY);
-        const chunkPromises = chunk.map(async (branch, index) => {
-          const branchIndex = i + index + 1;
+      const deletionWorker = async () => {
+        while (true) {
+          const branch = getNextDeleteBranch();
+          if (branch === null) {
+            break; // No more branches to process
+          }
+          const currentProgress = getNextDeletionProgress();
+          
           this.spinner.updateMessage(
-            `Deleting branch ${branchIndex}/${this.branchesToDelete.length}: ${branch}`,
+            `Deleting branch ${currentProgress}/${totalToDelete}: ${branch}`,
           );
           this.spinner.start();
 
           try {
-            await this.execCommand(`git branch -d "${branch}"`, {
+            const result = await this.execCommand(`git branch -d "${branch}"`, {
               silent: true,
             });
-            deletedCount++;
-            this.spinner.stop();
-            this.spinner.log(`✅ Deleted branch ${branch}`, colors.green);
+            // Check if the command failed (returns null or "__TIMEOUT__" instead of throwing)
+            if (result === "__TIMEOUT__") {
+              addFailedBranch(branch);
+              this.spinner.stop();
+              this.spinner.log(
+                `❌ Failed to delete branch ${branch} (timeout)`,
+                colors.red,
+              );
+            } else if (result === null) {
+              // Command failed (non-timeout error)
+              addFailedBranch(branch);
+              this.spinner.stop();
+              this.spinner.log(
+                `❌ Failed to delete branch ${branch}`,
+                colors.red,
+              );
+            } else {
+              // Success - result is a non-empty string
+              incrementDeletedCount();
+              this.spinner.stop();
+              this.spinner.log(`✅ Deleted branch ${branch}`, colors.green);
+            }
           } catch {
-            failedBranches.push(branch);
+            addFailedBranch(branch);
             this.spinner.stop();
             this.spinner.log(
               `❌ Failed to delete branch ${branch}`,
               colors.red,
             );
           }
-          await this.sleep(100);
-        });
+          await this.sleep(50);
+        }
+      };
 
-        await Promise.all(chunkPromises);
-      }
+      const workers = Array(Math.min(DELETE_CONCURRENCY, totalToDelete))
+        .fill(null)
+        .map(() => deletionWorker());
+
+      await Promise.all(workers);
 
       // Final status
-      if (failedBranches.length === 0) {
+      if (failedBranchesSync.length === 0) {
         this.spinner.success(`Successfully deleted ${deletedCount} branches`);
       } else {
         this.spinner.warning(
-          `Deleted ${deletedCount} branches, ${failedBranches.length} failed`,
+          `Deleted ${deletedCount} branches, ${failedBranchesSync.length} failed`,
         );
-        failedBranches.forEach((branch) => {
+        failedBranchesSync.forEach((branch) => {
           this.spinner.log(`  Failed: ${branch}`, colors.red);
         });
       }
@@ -468,6 +632,7 @@ ${colors.bold}OPTIONS:${colors.reset}
     -v, --verbose         Show detailed information during processing
     -u, --untracked-only  Only process untracked local branches (no remote tracking branch)
     -c, --count           Display branch count summary and exit (no deletion)
+    -V, --version         Show version information
     -h, --help            Show this help message
 
 ${colors.bold}DESCRIPTION:${colors.reset}
@@ -526,6 +691,10 @@ ${colors.bold}EXAMPLES:${colors.reset}
         case "-c":
           this.countOnly = true;
           break;
+        case "--version":
+        case "-V":
+          console.log(this.version);
+          return 0;
         case "--help":
         case "-h":
           this.showHelp();
@@ -546,7 +715,12 @@ ${colors.bold}EXAMPLES:${colors.reset}
       "\x1b[34m",
     );
     try {
-      this.parseArguments();
+      const parseResult = this.parseArguments();
+      // If parseArguments returns 0, it means --version or --help was requested
+      // Exit early without executing the main cleanup logic
+      if (parseResult === 0) {
+        return;
+      }
       await this.checkDependencies();
       await this.getCurrentBranch();
 
