@@ -440,43 +440,6 @@ MIT License - see LICENSE file for details.
 - 🧪 **CI Updates**: Removed Node.js 16.x from CI matrix (reached end-of-life)
 - 📦 **Dependencies**: Updated to use modern ESLint flat config format
 - 🚦 **Workflow Optimization**: CI now only runs on pull requests and on push to `main`/`master` to avoid duplicate runs for feature branches
-
-### v1.0.2
-
-- 🎯 **100% Test Coverage**: Achieved complete test coverage across all code paths
-- 🧪 **Enhanced Test Suite**: Added 76 comprehensive test cases covering all functionality
-- 🔧 **Code Quality**: Added ESLint and Prettier for consistent code style
-- 🏗️ **Architecture Improvements**: Separated CLI entry point for better testability
-- 🐛 **Bug Fixes**: Fixed spinner component and improved error handling
-- 📊 **Coverage Thresholds**: Set minimum 75% branch coverage requirement
-
-### v1.0.1
-
-- Fixed spinner display issue where branch names would merge together
-- Improved terminal output clearing with proper ANSI escape sequences
-- Enhanced progress indicators during branch checking and deletion
-- Added directory argument support for operating on different repositories
-
-### v1.0.0
-
-- Initial release
-- Basic branch cleanup functionality
-- GitHub PR integration
-- Dry-run mode
-- Verbose logging
-- Interactive spinner with progress feedback
-
-### v1.3.1
-
-- 🐛 **Critical Bug Fix**: Fixed whitespace parsing issue in branch tracking detection
-  - The `line.split(" ")` logic was not robust and could misclassify tracked branches as untracked when `git for-each-ref` output contained multiple consecutive spaces
-  - Replaced with `line.split(/\s+/)` and proper array handling to correctly parse branch names and upstream information
-  - Added comprehensive tests to verify the fix works with various whitespace scenarios
-- 🧪 **Enhanced Testing**: Added 2 new test cases specifically for whitespace parsing edge cases
-- ✅ **Maintained Quality**: 100% test coverage preserved with 168 test cases
-
-### v1.3.0
-
 - 🏷️ **New Feature**: Added `--untracked-only` mode to clean up local branches without remote tracking
 - 🧠 **Improved UX**: Main mode now only shows tracked branches with PRs, untracked mode handles local-only branches
 - 🔧 **Smart Dependencies**: GitHub CLI only required for main mode, not for untracked mode
@@ -487,14 +450,7 @@ MIT License - see LICENSE file for details.
 - 🔧 **Critical Fix**: Fixed branch tracking detection to use proper Git upstream relationships instead of hard-coded remote names
 - 🛠️ **Robust Parsing**: Fixed whitespace parsing bug that could misclassify tracked branches as untracked
 
-### v1.2.1
-
-- 🔧 **Node.js Compatibility**: Updated to require Node.js 18+ for ESLint 9.x compatibility
-- 🧪 **CI Updates**: Removed Node.js 16.x from CI matrix (reached end-of-life)
-- 📦 **Dependencies**: Updated to use modern ESLint flat config format
-- 🚦 **Workflow Optimization**: CI now only runs on pull requests and on push to `main`/`master` to avoid duplicate runs for feature branches
-
-### v1.2.0
+### v1.0.2
 
 - 🎯 **100% Test Coverage**: Achieved complete test coverage across all code paths
 - 🧪 **Enhanced Test Suite**: Added 76 comprehensive test cases covering all functionality
@@ -502,13 +458,23 @@ MIT License - see LICENSE file for details.
 - 🏗️ **Architecture Improvements**: Separated CLI entry point for better testability
 - 🐛 **Bug Fixes**: Fixed spinner component and improved error handling
 - 📊 **Coverage Thresholds**: Set minimum 75% branch coverage requirement
+- 🔧 **Node.js Compatibility**: Updated to require Node.js 18+ for ESLint 9.x compatibility
+- 🧪 **CI Updates**: Removed Node.js 16.x from CI matrix (reached end-of-life)
+- 📦 **Dependencies**: Updated to use modern ESLint flat config format
+- 🚦 **Workflow Optimization**: CI now only runs on pull requests and on push to `main`/`master` to avoid duplicate runs for feature branches
 
-### v1.1.0
+### v1.0.1
 
 - Fixed spinner display issue where branch names would merge together
 - Improved terminal output clearing with proper ANSI escape sequences
 - Enhanced progress indicators during branch checking and deletion
 - Added directory argument support for operating on different repositories
+- 🎯 **100% Test Coverage**: Achieved complete test coverage across all code paths
+- 🧪 **Enhanced Test Suite**: Added 76 comprehensive test cases covering all functionality
+- 🔧 **Code Quality**: Added ESLint and Prettier for consistent code style
+- 🏗️ **Architecture Improvements**: Separated CLI entry point for better testability
+- 🐛 **Bug Fixes**: Fixed spinner component and improved error handling
+- 📊 **Coverage Thresholds**: Set minimum 75% branch coverage requirement
 
 ### v1.0.0
 
