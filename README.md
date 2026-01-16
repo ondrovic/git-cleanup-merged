@@ -33,10 +33,11 @@ A Node.js command-line tool that automatically identifies and deletes local Git 
 - 🔒 **Protection**: Never deletes `main`, `master`, or your current branch
 - 👀 **Preview Mode**: Dry-run option to see what would be deleted
 - 📂 **Directory Support**: Operate on any git repo by passing a directory as the first argument
-- 🎨 **Colorful Output**: Clear visual indicators with icons and colors
+- ⚡ **Performance**: Parallel PR status checking and branch deletion for faster processing
+- 🎨 **Colorful Output**: Clear visual indicators with status icons (✅ Merged, 🔒 Closed, ⏳ Open)
 - 📊 **Status Overview**: Shows comprehensive branch status table
-- ⚡ **Interactive Spinner**: Real-time progress updates with animated spinner
-- 🛡️ **Comprehensive Testing**: 100% test coverage with 97 test cases and live coverage tracking
+- ⚡ **Interactive Spinner**: Real-time progress updates with an animated spinner
+- 🛡️ **Comprehensive Testing**: 100% test coverage for statements, branches, functions, and lines with 221 test cases
 - 🎯 **Code Quality**: ESLint and Prettier for consistent code style
 - 🧠 **Smart UX**: Focused modes - main mode for PR cleanup, untracked mode for local cleanup
 

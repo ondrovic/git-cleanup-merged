@@ -107,103 +107,57 @@ class GitCleanupTool {
     }
   }
 
-  async getLocalBranches() {
+  async getBranches(mode = "all") {
     try {
+      // Get all local branches with their upstream tracking information
       const branches = await this.execCommand(
-        'git for-each-ref --format="%(refname:short)" refs/heads/',
+        'git for-each-ref --format="%(refname:short) %(upstream:short)" refs/heads/',
         { silent: true },
       );
 
-      return branches
+      const result = [];
+      const branchLines = branches
         .split("\n")
-        .filter((branch) => branch.trim() !== "")
-        .filter(
-          (branch) =>
-            !["main", "master", this.currentBranch].includes(branch.trim()),
-        )
-        .map((branch) => branch.trim());
+        .filter((line) => line.trim() !== "")
+        .map((line) => line.trim());
+
+      for (const line of branchLines) {
+        const parts = line.split(/\s+/);
+        const branchName = parts[0];
+        const upstream = parts.slice(1).join(" ");
+
+        if (["main", "master", this.currentBranch].includes(branchName)) {
+          continue;
+        }
+
+        const isTracked = upstream && upstream.trim() !== "";
+
+        if (mode === "tracked" && isTracked) {
+          result.push(branchName);
+        } else if (mode === "untracked" && !isTracked) {
+          result.push(branchName);
+        } else if (mode === "all") {
+          result.push(branchName);
+        }
+      }
+
+      return result;
     } catch {
-      this.spinner.error("Failed to get local branches");
+      this.spinner.error(`Failed to get ${mode} branches`);
       return [];
     }
+  }
+
+  async getLocalBranches() {
+    return this.getBranches("all");
   }
 
   async getTrackedBranches() {
-    try {
-      // Get all local branches with their upstream tracking information
-      const branches = await this.execCommand(
-        'git for-each-ref --format="%(refname:short) %(upstream:short)" refs/heads/',
-        { silent: true },
-      );
-
-      const trackedBranches = [];
-
-      const branchLines = branches
-        .split("\n")
-        .filter((line) => line.trim() !== "")
-        .map((line) => line.trim());
-
-      for (const line of branchLines) {
-        // Use regex to split on one or more whitespace characters
-        const parts = line.split(/\s+/);
-        const branchName = parts[0];
-        const upstream = parts.slice(1).join(" "); // Join remaining parts in case upstream contains spaces
-
-        // Skip main, master, and current branch
-        if (["main", "master", this.currentBranch].includes(branchName)) {
-          continue;
-        }
-
-        // If upstream is not empty, the branch is tracking a remote branch
-        if (upstream && upstream.trim() !== "") {
-          trackedBranches.push(branchName);
-        }
-      }
-
-      return trackedBranches;
-    } catch {
-      this.spinner.error("Failed to get tracked branches");
-      return [];
-    }
+    return this.getBranches("tracked");
   }
 
   async getUntrackedBranches() {
-    try {
-      // Get all local branches with their upstream tracking information
-      const branches = await this.execCommand(
-        'git for-each-ref --format="%(refname:short) %(upstream:short)" refs/heads/',
-        { silent: true },
-      );
-
-      const untrackedBranches = [];
-
-      const branchLines = branches
-        .split("\n")
-        .filter((line) => line.trim() !== "")
-        .map((line) => line.trim());
-
-      for (const line of branchLines) {
-        // Use regex to split on one or more whitespace characters
-        const parts = line.split(/\s+/);
-        const branchName = parts[0];
-        const upstream = parts.slice(1).join(" "); // Join remaining parts in case upstream contains spaces
-
-        // Skip main, master, and current branch
-        if (["main", "master", this.currentBranch].includes(branchName)) {
-          continue;
-        }
-
-        // If upstream is empty, the branch is not tracking any remote branch
-        if (!upstream || upstream.trim() === "") {
-          untrackedBranches.push(branchName);
-        }
-      }
-
-      return untrackedBranches;
-    } catch {
-      this.spinner.error("Failed to get untracked branches");
-      return [];
-    }
+    return this.getBranches("untracked");
   }
 
   async countBranches() {
@@ -226,11 +180,10 @@ class GitCleanupTool {
 
   async getPRStatus(branch) {
     try {
-      const result = await this.execCommand(
-        `gh pr view "${branch}" --json state --jq .state`,
-        { silent: true },
+      return await this.execCommand(
+          `gh pr view "${branch}" --json state --jq .state`,
+          {silent: true},
       );
-      return result;
     } catch {
       return null;
     }
@@ -254,55 +207,60 @@ class GitCleanupTool {
       `Checking ${branches.length} tracked branches against GitHub...`,
     );
 
-    // Process each branch
-    for (let i = 0; i < branches.length; i++) {
-      const branch = branches[i];
-      this.spinner.updateMessage(
-        `Checking branch ${i + 1}/${branches.length}: ${branch}`,
-      );
-
-      const prStatus = await this.getPRStatus(branch);
-
-      // Only call debug if verbose is enabled to avoid stopping spinner
-      if (this.verbose) {
-        this.spinner.debug(
-          `Checking branch ${branch} -> PR state: ${prStatus || "unknown"}`,
-          this.verbose,
-        );
-        // Restart spinner after debug output
+    // Limit concurrency to avoid hitting GitHub API rate limits
+    const CONCURRENCY_LIMIT = 5;
+    const results = [];
+    
+    for (let i = 0; i < branches.length; i += CONCURRENCY_LIMIT) {
+      const chunk = branches.slice(i, i + CONCURRENCY_LIMIT);
+      const chunkPromises = chunk.map(async (branch, index) => {
+        const branchIndex = i + index + 1;
         this.spinner.updateMessage(
-          `Checking branch ${i + 1}/${branches.length}: ${branch}`,
+          `Checking branch ${branchIndex}/${branches.length}: ${branch}`,
         );
-        this.spinner.start();
-      }
-
-      let icon, label;
-      switch (prStatus) {
-        case "MERGED":
-          icon = "✅";
-          label = "Merged";
-          this.branchesToDelete.push(branch);
-          break;
-        case "CLOSED":
-          icon = "🔒";
-          label = "Closed";
-          this.branchesToDelete.push(branch);
-          break;
-        case "OPEN":
-          icon = "⏳";
-          label = "Open";
-          break;
-        default:
-          icon = "❌";
-          label = "No PR";
-          break;
-      }
-
-      this.prResults.push({ branch, icon, label });
-
-      // Add a small delay so we can see the spinner working
-      await this.sleep(300);
+        
+        const prStatus = await this.getPRStatus(branch);
+        
+        if (this.verbose) {
+          this.spinner.debug(
+            `Checking branch ${branch} -> PR state: ${prStatus || "unknown"}`,
+            this.verbose,
+          );
+        }
+        
+        let icon, label;
+        switch (prStatus) {
+          case "MERGED":
+            icon = "✅";
+            label = "Merged";
+            this.branchesToDelete.push(branch);
+            break;
+          case "CLOSED":
+            icon = "🔒";
+            label = "Closed";
+            this.branchesToDelete.push(branch);
+            break;
+          case "OPEN":
+            icon = "⏳";
+            label = "Open";
+            break;
+          default:
+            icon = "❌";
+            label = "No PR";
+            break;
+        }
+        
+        return { branch, icon, label };
+      });
+      
+      const chunkResults = await Promise.all(chunkPromises);
+      results.push(...chunkResults);
+      
+      // Small delay between chunks
+      await this.sleep(100);
     }
+
+    this.prResults = results;
 
     this.spinner.success(
       `Finished checking ${branches.length} tracked branches`,
@@ -402,9 +360,11 @@ class GitCleanupTool {
       }
     }
 
-    // List branches without icons since the spinner methods handle them
+    // List branches with icons for better clarity
     this.branchesToDelete.forEach((branch) => {
-      this.spinner.log(`  ${branch}`, colors.red);
+      const result = this.prResults.find((r) => r.branch === branch);
+      const icon = result ? result.icon : "🗑️";
+      this.spinner.log(`  ${icon} ${branch}`, colors.red);
     });
 
     if (this.dryRun) {
@@ -430,28 +390,37 @@ class GitCleanupTool {
       let deletedCount = 0;
       let failedBranches = [];
 
-      for (let i = 0; i < this.branchesToDelete.length; i++) {
-        const branch = this.branchesToDelete[i];
-        this.spinner.updateMessage(
-          `Deleting branch ${i + 1}/${this.branchesToDelete.length}: ${branch}`,
-        );
-        this.spinner.start();
+      // Concurrency limit for deletion as well
+      const DELETE_CONCURRENCY = 3;
 
-        try {
-          await this.execCommand(`git branch -d "${branch}"`, { silent: true });
-          deletedCount++;
-          // Stop spinner before printing confirmation to avoid overlap
-          this.spinner.stop();
-          this.spinner.log(`✅ Deleted branch ${branch}`, colors.green);
-          // Brief pause to show progress
-          await this.sleep(200);
-        } catch {
-          failedBranches.push(branch);
-          // Stop spinner before printing error to avoid overlap
-          this.spinner.stop();
-          this.spinner.log(`❌ Failed to delete branch ${branch}`, colors.red);
-          await this.sleep(200);
-        }
+      for (let i = 0; i < this.branchesToDelete.length; i += DELETE_CONCURRENCY) {
+        const chunk = this.branchesToDelete.slice(i, i + DELETE_CONCURRENCY);
+        const chunkPromises = chunk.map(async (branch, index) => {
+          const branchIndex = i + index + 1;
+          this.spinner.updateMessage(
+            `Deleting branch ${branchIndex}/${this.branchesToDelete.length}: ${branch}`,
+          );
+          this.spinner.start();
+
+          try {
+            await this.execCommand(`git branch -d "${branch}"`, {
+              silent: true,
+            });
+            deletedCount++;
+            this.spinner.stop();
+            this.spinner.log(`✅ Deleted branch ${branch}`, colors.green);
+          } catch {
+            failedBranches.push(branch);
+            this.spinner.stop();
+            this.spinner.log(
+              `❌ Failed to delete branch ${branch}`,
+              colors.red,
+            );
+          }
+          await this.sleep(100);
+        });
+
+        await Promise.all(chunkPromises);
       }
 
       // Final status

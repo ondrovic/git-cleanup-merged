@@ -262,12 +262,12 @@ describe("GitCleanupTool", () => {
     });
 
     it("should get local branches successfully", async () => {
-      tool.execCommand.mockResolvedValue("feature1\nfeature2\nmain\ndevelop");
+      tool.execCommand.mockResolvedValue("feature1 \nfeature2 \nmain \ndevelop ");
 
       const result = await tool.getLocalBranches();
 
       expect(tool.execCommand).toHaveBeenCalledWith(
-        'git for-each-ref --format="%(refname:short)" refs/heads/',
+        'git for-each-ref --format="%(refname:short) %(upstream:short)" refs/heads/',
         { silent: true },
       );
       expect(result).toEqual(["feature1", "feature2", "develop"]);
@@ -291,7 +291,7 @@ describe("GitCleanupTool", () => {
 
       expect(result).toEqual([]);
       expect(tool.spinner.error).toHaveBeenCalledWith(
-        "Failed to get local branches",
+        "Failed to get all branches",
       );
     });
 
@@ -301,6 +301,15 @@ describe("GitCleanupTool", () => {
       const result = await tool.getLocalBranches();
 
       expect(result).toEqual([]);
+    });
+
+    it("should use default 'all' mode when no mode is provided to getBranches", async () => {
+      tool.execCommand.mockResolvedValue("feature1 \nfeature2 \nmain \ndevelop ");
+
+      // Call getBranches directly without arguments to test default value
+      const result = await tool.getBranches();
+
+      expect(result).toEqual(["feature1", "feature2", "develop"]);
     });
   });
 
@@ -327,6 +336,28 @@ describe("GitCleanupTool", () => {
 
       expect(tool.spinner.error).toHaveBeenCalledWith(
         "Failed to get tracked branches",
+      );
+      expect(result).toEqual([]);
+    });
+
+    it("should handle error in getUntrackedBranches mode", async () => {
+      tool.execCommand.mockRejectedValue(new Error("Failed"));
+
+      const result = await tool.getUntrackedBranches();
+
+      expect(tool.spinner.error).toHaveBeenCalledWith(
+        "Failed to get untracked branches",
+      );
+      expect(result).toEqual([]);
+    });
+
+    it("should handle error in getLocalBranches mode", async () => {
+      tool.execCommand.mockRejectedValue(new Error("Failed"));
+
+      const result = await tool.getLocalBranches();
+
+      expect(tool.spinner.error).toHaveBeenCalledWith(
+        "Failed to get all branches",
       );
       expect(result).toEqual([]);
     });
@@ -626,6 +657,21 @@ describe("GitCleanupTool", () => {
         { branch: "null-status", icon: "❌", label: "No PR" },
       ]);
     });
+
+    it("should handle multiple chunks of branches", async () => {
+      // CONCURRENCY_LIMIT is 5
+      const branches = ["b1", "b2", "b3", "b4", "b5", "b6"];
+      tool.getTrackedBranches.mockResolvedValue(branches);
+      tool.getPRStatus.mockResolvedValue("MERGED");
+
+      await tool.checkBranches();
+
+      expect(tool.branchesToDelete).toEqual(branches);
+      expect(tool.prResults).toHaveLength(6);
+      expect(tool.spinner.success).toHaveBeenCalledWith(
+        "Finished checking 6 tracked branches",
+      );
+    });
   });
 
   describe("checkUntrackedBranches method", () => {
@@ -770,6 +816,32 @@ describe("GitCleanupTool", () => {
       );
     });
 
+    it("should use the branch icon from prResults", async () => {
+      tool.branchesToDelete = ["feature1"];
+      tool.prResults = [{ branch: "feature1", icon: "✅", label: "Merged" }];
+      tool.askConfirmation.mockResolvedValue(false);
+
+      await tool.deleteBranches();
+
+      expect(tool.spinner.log).toHaveBeenCalledWith(
+        expect.stringContaining("✅ feature1"),
+        expect.anything(),
+      );
+    });
+
+    it("should use a fallback icon if branch is not in prResults", async () => {
+      tool.branchesToDelete = ["unknown-branch"];
+      tool.prResults = [{ branch: "other-branch", icon: "✅", label: "Merged" }]; // Branch not in results
+      tool.askConfirmation.mockResolvedValue(false);
+
+      await tool.deleteBranches();
+
+      expect(tool.spinner.log).toHaveBeenCalledWith(
+        expect.stringContaining("🗑️ unknown-branch"),
+        expect.anything(),
+      );
+    });
+
     it("should handle cancellation", async () => {
       tool.branchesToDelete = ["feature1"];
       tool.askConfirmation.mockResolvedValue(false);
@@ -808,6 +880,20 @@ describe("GitCleanupTool", () => {
       );
       expect(tool.spinner.info).toHaveBeenCalledWith(
         "Run without --dry-run to actually delete untracked branches.",
+      );
+    });
+
+    it("should handle multiple chunks of branches for deletion", async () => {
+      // DELETE_CONCURRENCY is 3
+      tool.branchesToDelete = ["b1", "b2", "b3", "b4"];
+      tool.askConfirmation.mockResolvedValue(true);
+      tool.execCommand.mockResolvedValue("");
+
+      await tool.deleteBranches();
+
+      expect(tool.execCommand).toHaveBeenCalledTimes(4);
+      expect(tool.spinner.success).toHaveBeenCalledWith(
+        "Successfully deleted 4 branches",
       );
     });
   });
