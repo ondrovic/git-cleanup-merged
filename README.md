@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml/badge.svg)](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/ondrovic/git-cleanup-merged/graph/badge.svg?token=x3cYga3d2E)](https://codecov.io/gh/ondrovic/git-cleanup-merged)
+[![Publish to NPM](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/publish.yml/badge.svg)](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/publish.yml)
+[![npm version](https://img.shields.io/npm/v/git-cleanup-merged.svg)](https://www.npmjs.com/package/git-cleanup-merged)
 
 A Node.js command-line tool that automatically identifies and deletes local Git branches that have been merged via GitHub Pull Requests.
 
@@ -410,6 +412,59 @@ npm run format
 MIT License - see LICENSE file for details.
 
 ## 📋 Changelog
+
+### v1.0.5
+
+- 🐛 **Critical Bug Fix**: Fixed whitespace parsing issue in branch tracking detection
+  - The `line.split(" ")` logic was not robust and could misclassify tracked branches as untracked when `git for-each-ref` output contained multiple consecutive spaces
+  - Replaced with `line.split(/\s+/)` and proper array handling to correctly parse branch names and upstream information
+  - Added comprehensive tests to verify the fix works with various whitespace scenarios
+- 🧪 **Enhanced Testing**: Added 2 new test cases specifically for whitespace parsing edge cases
+- ✅ **Maintained Quality**: 100% test coverage preserved with 168 test cases
+
+### v1.0.4
+
+- 🏷️ **New Feature**: Added `--untracked-only` mode to clean up local branches without remote tracking
+- 🧠 **Improved UX**: Main mode now only shows tracked branches with PRs, untracked mode handles local-only branches
+- 🔧 **Smart Dependencies**: GitHub CLI only required for main mode, not for untracked mode
+- 💡 **Helpful Guidance**: Suggests `--untracked-only` when no tracked branches found in main mode
+- 🎯 **100% Test Coverage**: Achieved complete test coverage with 97 comprehensive test cases
+- 🐛 **Bug Fixes**: Fixed branch tracking detection logic and improved deletion feedback
+- 📊 **Enhanced Testing**: Added tests for all new functionality and edge cases
+- 🔧 **Critical Fix**: Fixed branch tracking detection to use proper Git upstream relationships instead of hard-coded remote names
+- 🛠️ **Robust Parsing**: Fixed whitespace parsing bug that could misclassify tracked branches as untracked
+
+### v1.0.3
+
+- 🔧 **Node.js Compatibility**: Updated to require Node.js 18+ for ESLint 9.x compatibility
+- 🧪 **CI Updates**: Removed Node.js 16.x from CI matrix (reached end-of-life)
+- 📦 **Dependencies**: Updated to use modern ESLint flat config format
+- 🚦 **Workflow Optimization**: CI now only runs on pull requests and on push to `main`/`master` to avoid duplicate runs for feature branches
+
+### v1.0.2
+
+- 🎯 **100% Test Coverage**: Achieved complete test coverage across all code paths
+- 🧪 **Enhanced Test Suite**: Added 76 comprehensive test cases covering all functionality
+- 🔧 **Code Quality**: Added ESLint and Prettier for consistent code style
+- 🏗️ **Architecture Improvements**: Separated CLI entry point for better testability
+- 🐛 **Bug Fixes**: Fixed spinner component and improved error handling
+- 📊 **Coverage Thresholds**: Set minimum 75% branch coverage requirement
+
+### v1.0.1
+
+- Fixed spinner display issue where branch names would merge together
+- Improved terminal output clearing with proper ANSI escape sequences
+- Enhanced progress indicators during branch checking and deletion
+- Added directory argument support for operating on different repositories
+
+### v1.0.0
+
+- Initial release
+- Basic branch cleanup functionality
+- GitHub PR integration
+- Dry-run mode
+- Verbose logging
+- Interactive spinner with progress feedback
 
 ### v1.3.1
 
