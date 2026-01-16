@@ -74,8 +74,7 @@
           "classNameTemplate": "{filepath}",
           "titleTemplate": "{title}",
           "ancestorSeparator": " › ",
-          "usePathForSuiteName": true,
-          "useFullFilePath": true
+          "usePathForSuiteName": true
         }
       ]
     ]
