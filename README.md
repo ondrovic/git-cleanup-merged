@@ -415,12 +415,12 @@ MIT License - see LICENSE file for details.
 
 ### v1.0.5
 
-- 🐛 **Critical Bug Fix**: Fixed whitespace parsing issue in branch tracking detection
-  - The `line.split(" ")` logic was not robust and could misclassify tracked branches as untracked when `git for-each-ref` output contained multiple consecutive spaces
-  - Replaced with `line.split(/\s+/)` and proper array handling to correctly parse branch names and upstream information
-  - Added comprehensive tests to verify the fix works with various whitespace scenarios
-- 🧪 **Enhanced Testing**: Added 2 new test cases specifically for whitespace parsing edge cases
-- ✅ **Maintained Quality**: 100% test coverage preserved with 168 test cases
+- Implemented major refactoring of branch handling: unified `getBranches` with mode support; added parallel PR status checks and deletion with concurrency limits; updated README to reflect new performance and icon details; bumped package version to 1.0.2. Enhanced error messaging, streamlined spinner usage, and improved test coverage for new logic.
+- feat: Add new `--version` flag, improve error handling, and enhance timeouts
+- chore: Bump the version to 1.0.5 and update Jest configuration
+- fix: Update test case count and enhance spinner messaging
+- chore: Remove unused `useFullFilePath` option in Jest configuration
+- docs: Add NPM publishing badges and update changelog in README, Clean up and consolidate changelog in README
 
 ### v1.0.4
 
@@ -433,6 +433,12 @@ MIT License - see LICENSE file for details.
 - 📊 **Enhanced Testing**: Added tests for all new functionality and edge cases
 - 🔧 **Critical Fix**: Fixed branch tracking detection to use proper Git upstream relationships instead of hard-coded remote names
 - 🛠️ **Robust Parsing**: Fixed whitespace parsing bug that could misclassify tracked branches as untracked
+- 🐛 **Critical Bug Fix**: Fixed whitespace parsing issue in branch tracking detection
+    - The `line.split(" ")` logic was not robust and could misclassify tracked branches as untracked when `git for-each-ref` output contained multiple consecutive spaces
+    - Replaced with `line.split(/\s+/)` and proper array handling to correctly parse branch names and upstream information
+    - Added comprehensive tests to verify the fix works with various whitespace scenarios
+- 🧪 **Enhanced Testing**: Added 2 new test cases specifically for whitespace parsing edge cases
+- ✅ **Maintained Quality**: 100% test coverage preserved with 168 test cases
 
 ### v1.0.3
 
