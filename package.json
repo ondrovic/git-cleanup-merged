@@ -1,6 +1,6 @@
 {
   "name": "git-cleanup-merged",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Clean up local Git branches that have merged PRs on GitHub",
   "main": "index.js",
   "bin": {
@@ -74,9 +74,7 @@
           "classNameTemplate": "{filepath}",
           "titleTemplate": "{title}",
           "ancestorSeparator": " › ",
-          "usePathForSuiteName": true,
-          "useFullFilePath": true,
-          "classNameTemplate": "{filepath}"
+          "usePathForSuiteName": true
         }
       ]
     ]

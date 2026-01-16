@@ -35,10 +35,11 @@ A Node.js command-line tool that automatically identifies and deletes local Git 
 - 🔒 **Protection**: Never deletes `main`, `master`, or your current branch
 - 👀 **Preview Mode**: Dry-run option to see what would be deleted
 - 📂 **Directory Support**: Operate on any git repo by passing a directory as the first argument
-- 🎨 **Colorful Output**: Clear visual indicators with icons and colors
+- ⚡ **Performance**: Parallel PR status checking and branch deletion for faster processing
+- 🎨 **Colorful Output**: Clear visual indicators with status icons (✅ Merged, 🔒 Closed, ⏳ Open)
 - 📊 **Status Overview**: Shows comprehensive branch status table
-- ⚡ **Interactive Spinner**: Real-time progress updates with animated spinner
-- 🛡️ **Comprehensive Testing**: 100% test coverage with 97 test cases and live coverage tracking
+- ⚡ **Interactive Spinner**: Real-time progress updates with an animated spinner
+- 🛡️ **Comprehensive Testing**: 100% test coverage for statements, branches, functions, and lines with 168 test cases
 - 🎯 **Code Quality**: ESLint and Prettier for consistent code style
 - 🧠 **Smart UX**: Focused modes - main mode for PR cleanup, untracked mode for local cleanup
 
@@ -193,6 +194,8 @@ git-cleanup-merged ../path/to/repo -u
 | `--dry-run`        | `-n`  | Show what would be deleted without actually deleting                                 |
 | `--verbose`        | `-v`  | Show detailed information during processing                                          |
 | `--untracked-only` | `-u`  | Only process untracked local branches (no remote tracking branch)                    |
+| `--count`          | `-c`  | Display branch count summary and exit (no deletion)                                  |
+| `--version`        | `-V`  | Show version information                                                             |
 | `--help`           | `-h`  | Show help message                                                                    |
 
 ### Example Output
@@ -410,16 +413,16 @@ MIT License - see LICENSE file for details.
 
 ## 📋 Changelog
 
-### v1.3.1
+### v1.0.5
 
-- 🐛 **Critical Bug Fix**: Fixed whitespace parsing issue in branch tracking detection
-  - The `line.split(" ")` logic was not robust and could misclassify tracked branches as untracked when `git for-each-ref` output contained multiple consecutive spaces
-  - Replaced with `line.split(/\s+/)` and proper array handling to correctly parse branch names and upstream information
-  - Added comprehensive tests to verify the fix works with various whitespace scenarios
-- 🧪 **Enhanced Testing**: Added 2 new test cases specifically for whitespace parsing edge cases
-- ✅ **Maintained Quality**: 100% test coverage preserved with 97 test cases
+- Implemented major refactoring of branch handling: unified `getBranches` with mode support; added parallel PR status checks and deletion with concurrency limits; updated README to reflect new performance and icon details; bumped package version to 1.0.2. Enhanced error messaging, streamlined spinner usage, and improved test coverage for new logic.
+- feat: Add new `--version` flag, improve error handling, and enhance timeouts
+- chore: Bump the version to 1.0.5 and update Jest configuration
+- fix: Update test case count and enhance spinner messaging
+- chore: Remove unused `useFullFilePath` option in Jest configuration
+- docs: Add NPM publishing badges and update changelog in README, Clean up and consolidate changelog in README
 
-### v1.3.0
+### v1.0.4
 
 - 🏷️ **New Feature**: Added `--untracked-only` mode to clean up local branches without remote tracking
 - 🧠 **Improved UX**: Main mode now only shows tracked branches with PRs, untracked mode handles local-only branches
@@ -430,15 +433,30 @@ MIT License - see LICENSE file for details.
 - 📊 **Enhanced Testing**: Added tests for all new functionality and edge cases
 - 🔧 **Critical Fix**: Fixed branch tracking detection to use proper Git upstream relationships instead of hard-coded remote names
 - 🛠️ **Robust Parsing**: Fixed whitespace parsing bug that could misclassify tracked branches as untracked
+- 🐛 **Critical Bug Fix**: Fixed whitespace parsing issue in branch tracking detection
+    - The `line.split(" ")` logic was not robust and could misclassify tracked branches as untracked when `git for-each-ref` output contained multiple consecutive spaces
+    - Replaced with `line.split(/\s+/)` and proper array handling to correctly parse branch names and upstream information
+    - Added comprehensive tests to verify the fix works with various whitespace scenarios
+- 🧪 **Enhanced Testing**: Added 2 new test cases specifically for whitespace parsing edge cases
+- ✅ **Maintained Quality**: 100% test coverage preserved with 168 test cases
 
-### v1.2.1
+### v1.0.3
 
 - 🔧 **Node.js Compatibility**: Updated to require Node.js 18+ for ESLint 9.x compatibility
 - 🧪 **CI Updates**: Removed Node.js 16.x from CI matrix (reached end-of-life)
 - 📦 **Dependencies**: Updated to use modern ESLint flat config format
 - 🚦 **Workflow Optimization**: CI now only runs on pull requests and on push to `main`/`master` to avoid duplicate runs for feature branches
+- 🏷️ **New Feature**: Added `--untracked-only` mode to clean up local branches without remote tracking
+- 🧠 **Improved UX**: Main mode now only shows tracked branches with PRs, untracked mode handles local-only branches
+- 🔧 **Smart Dependencies**: GitHub CLI only required for main mode, not for untracked mode
+- 💡 **Helpful Guidance**: Suggests `--untracked-only` when no tracked branches found in main mode
+- 🎯 **100% Test Coverage**: Achieved complete test coverage with 97 comprehensive test cases
+- 🐛 **Bug Fixes**: Fixed branch tracking detection logic and improved deletion feedback
+- 📊 **Enhanced Testing**: Added tests for all new functionality and edge cases
+- 🔧 **Critical Fix**: Fixed branch tracking detection to use proper Git upstream relationships instead of hard-coded remote names
+- 🛠️ **Robust Parsing**: Fixed whitespace parsing bug that could misclassify tracked branches as untracked
 
-### v1.2.0
+### v1.0.2
 
 - 🎯 **100% Test Coverage**: Achieved complete test coverage across all code paths
 - 🧪 **Enhanced Test Suite**: Added 76 comprehensive test cases covering all functionality
@@ -446,13 +464,23 @@ MIT License - see LICENSE file for details.
 - 🏗️ **Architecture Improvements**: Separated CLI entry point for better testability
 - 🐛 **Bug Fixes**: Fixed spinner component and improved error handling
 - 📊 **Coverage Thresholds**: Set minimum 75% branch coverage requirement
+- 🔧 **Node.js Compatibility**: Updated to require Node.js 18+ for ESLint 9.x compatibility
+- 🧪 **CI Updates**: Removed Node.js 16.x from CI matrix (reached end-of-life)
+- 📦 **Dependencies**: Updated to use modern ESLint flat config format
+- 🚦 **Workflow Optimization**: CI now only runs on pull requests and on push to `main`/`master` to avoid duplicate runs for feature branches
 
-### v1.1.0
+### v1.0.1
 
 - Fixed spinner display issue where branch names would merge together
 - Improved terminal output clearing with proper ANSI escape sequences
 - Enhanced progress indicators during branch checking and deletion
 - Added directory argument support for operating on different repositories
+- 🎯 **100% Test Coverage**: Achieved complete test coverage across all code paths
+- 🧪 **Enhanced Test Suite**: Added 76 comprehensive test cases covering all functionality
+- 🔧 **Code Quality**: Added ESLint and Prettier for consistent code style
+- 🏗️ **Architecture Improvements**: Separated CLI entry point for better testability
+- 🐛 **Bug Fixes**: Fixed spinner component and improved error handling
+- 📊 **Coverage Thresholds**: Set minimum 75% branch coverage requirement
 
 ### v1.0.0
 
