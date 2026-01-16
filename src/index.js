@@ -284,7 +284,7 @@ class GitCleanupTool {
       
       // Update the spinner message as we start checking this branch
       this.spinner.updateMessage(
-        `Checking '${branch}'`,
+        `Checking branch ${branchIndex + 1}/${branches.length}: ${branch}`,
       );
       this.spinner.start();
       
@@ -292,12 +292,12 @@ class GitCleanupTool {
       
       if (this.verbose) {
         this.spinner.debug(
-          `Checking '${branch}' -> PR state: ${prStatus || "unknown"}`,
+          `Checking branch ${branchIndex + 1}/${branches.length}: ${branch} -> PR state: ${prStatus || "unknown"}`,
           this.verbose,
         );
         // Restart spinner after debug output stops it
         this.spinner.updateMessage(
-          `Checking '${branch}'`,
+          `Checking branch ${branchIndex + 1}/${branches.length}: ${branch}`,
         );
         this.spinner.start();
       }

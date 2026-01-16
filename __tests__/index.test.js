@@ -793,7 +793,7 @@ describe("GitCleanupTool", () => {
       await tool.checkBranches();
 
       expect(tool.spinner.debug).toHaveBeenCalledWith(
-        "Checking 'unknown-status' -> PR state: DRAFT",
+        "Checking branch 1/1: unknown-status -> PR state: DRAFT",
         true,
       );
       expect(tool.branchesToDelete).toEqual([]);
@@ -810,7 +810,7 @@ describe("GitCleanupTool", () => {
       await tool.checkBranches();
 
       expect(tool.spinner.debug).toHaveBeenCalledWith(
-        "Checking 'null-status' -> PR state: unknown",
+        "Checking branch 1/1: null-status -> PR state: unknown",
         true,
       );
       expect(tool.branchesToDelete).toEqual([]);

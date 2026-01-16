@@ -37,7 +37,7 @@ A Node.js command-line tool that automatically identifies and deletes local Git 
 - 🎨 **Colorful Output**: Clear visual indicators with status icons (✅ Merged, 🔒 Closed, ⏳ Open)
 - 📊 **Status Overview**: Shows comprehensive branch status table
 - ⚡ **Interactive Spinner**: Real-time progress updates with an animated spinner
-- 🛡️ **Comprehensive Testing**: 100% test coverage for statements, branches, functions, and lines with 221 test cases
+- 🛡️ **Comprehensive Testing**: 100% test coverage for statements, branches, functions, and lines with 168 test cases
 - 🎯 **Code Quality**: ESLint and Prettier for consistent code style
 - 🧠 **Smart UX**: Focused modes - main mode for PR cleanup, untracked mode for local cleanup
 
@@ -418,7 +418,7 @@ MIT License - see LICENSE file for details.
   - Replaced with `line.split(/\s+/)` and proper array handling to correctly parse branch names and upstream information
   - Added comprehensive tests to verify the fix works with various whitespace scenarios
 - 🧪 **Enhanced Testing**: Added 2 new test cases specifically for whitespace parsing edge cases
-- ✅ **Maintained Quality**: 100% test coverage preserved with 97 test cases
+- ✅ **Maintained Quality**: 100% test coverage preserved with 168 test cases
 
 ### v1.3.0
 
