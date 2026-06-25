@@ -11,12 +11,12 @@ A Node.js command-line tool that automatically identifies and deletes local Git 
 
 ## 🧪 Testing & Quality Assurance
 
-- [![CI](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml/badge.svg)](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml) **CI runs on all pull requests and on push to `main`/`master` only** via GitHub Actions (tests Node.js 18.x, 20.x)
+- [![CI](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml/badge.svg)](https://github.com/ondrovic/git-cleanup-merged/actions/workflows/ci.yml) **CI runs on all pull requests and on push to `main`/`master` only** via GitHub Actions (tests Node.js 20.x, 22.x)
   - This avoids duplicate runs for feature branches and is the recommended best practice for open source projects.
 - [![codecov](https://codecov.io/gh/ondrovic/git-cleanup-merged/graph/badge.svg?token=x3cYga3d2E)](https://codecov.io/gh/ondrovic/git-cleanup-merged) **Live coverage tracking** via Codecov
 - 🚦 **Branch coverage threshold:** CI will fail if branch coverage drops below 75%
 - 📝 **JUnit test results and coverage are uploaded to Codecov for every CI run**
-- 📦 **CI uses Yarn** (`yarn install --frozen-lockfile`) with Corepack on Node.js 18.x and 20.x
+- 📦 **CI uses Yarn** (`yarn install --frozen-lockfile`) with Corepack on Node.js 20.x and 22.x
 - 🧪 **Run tests locally:**
   ```bash
   corepack enable
@@ -50,7 +50,7 @@ A Node.js command-line tool that automatically identifies and deletes local Git 
 
 Before installing, make sure you have:
 
-- **Node.js** (version 18 or higher - tested on 18.x and 20.x)
+- **Node.js** (version 20.19 or higher - tested on 20.x and 22.x)
 - **Git** installed and configured
 - **GitHub CLI** (`gh`) installed and authenticated (only required for main mode, not for `--untracked-only`)
 - Active internet connection for GitHub API calls (only required for main mode)
@@ -134,7 +134,7 @@ yarn install --frozen-lockfile
 yarn exec git-cleanup-merged -- --help
 ```
 
-This project pins Node 20.19.0 via [`.mise.toml`](.mise.toml) and [`.nvmrc`](.nvmrc). With mise, run `mise install` in the repo to install that version automatically. Without mise, use any Node.js 18+ version.
+This project pins Node 20.19.0 via [`.mise.toml`](.mise.toml) and [`.nvmrc`](.nvmrc). With mise, run `mise install` in the repo to install that version automatically. Without mise, use Node.js 20.19 or higher.
 
 Avoid `npm install` in this repo — [`package.json`](package.json) declares Yarn as the package manager. Avoid `npm link` when using mise; it has the same per-Node-version issues as `npm install -g`.
 
@@ -390,7 +390,7 @@ corepack enable
 yarn install --frozen-lockfile
 ```
 
-CI runs the same install command and executes `yarn lint`, `yarn test`, and `yarn test:coverage:ci` on Node.js 18.x and 20.x.
+CI runs the same install command and executes `yarn lint`, `yarn test`, and `yarn test:coverage:ci` on Node.js 20.x and 22.x.
 
 ### Project Structure
 
@@ -475,6 +475,8 @@ MIT License - see LICENSE file for details.
 
 ### v1.0.5
 
+- 🔧 **Node.js Compatibility**: Updated to require Node.js 20.19+ for ESLint 10.x compatibility
+- 🧪 **CI Updates**: Dropped Node.js 18.x from CI matrix; CI now tests 20.x and 22.x
 - Implemented major refactoring of branch handling: unified `getBranches` with mode support; added parallel PR status checks and deletion with concurrency limits; updated README to reflect new performance and icon details; bumped package version to 1.0.2. Enhanced error messaging, streamlined spinner usage, and improved test coverage for new logic.
 - feat: Add new `--version` flag, improve error handling, and enhance timeouts
 - chore: Bump the version to 1.0.5 and update Jest configuration
