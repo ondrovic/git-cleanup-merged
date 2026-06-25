@@ -16,13 +16,16 @@ A Node.js command-line tool that automatically identifies and deletes local Git 
 - [![codecov](https://codecov.io/gh/ondrovic/git-cleanup-merged/graph/badge.svg?token=x3cYga3d2E)](https://codecov.io/gh/ondrovic/git-cleanup-merged) **Live coverage tracking** via Codecov
 - 🚦 **Branch coverage threshold:** CI will fail if branch coverage drops below 75%
 - 📝 **JUnit test results and coverage are uploaded to Codecov for every CI run**
+- 📦 **CI uses Yarn** (`yarn install --frozen-lockfile`) with Corepack on Node.js 18.x and 20.x
 - 🧪 **Run tests locally:**
   ```bash
-  npm test
-  npm run test:coverage
+  corepack enable
+  yarn install --frozen-lockfile
+  yarn test
+  yarn test:coverage
   ```
 - 📈 **Check coverage report:**
-  After running `npm run test:coverage`, open `coverage/lcov-report/index.html` in your browser for a detailed report.
+  After running `yarn test:coverage`, open `coverage/lcov-report/index.html` in your browser for a detailed report.
 - 🔍 **Code quality:** ESLint and Prettier configured for consistent code style
 
 ---
@@ -39,7 +42,7 @@ A Node.js command-line tool that automatically identifies and deletes local Git 
 - 🎨 **Colorful Output**: Clear visual indicators with status icons (✅ Merged, 🔒 Closed, ⏳ Open)
 - 📊 **Status Overview**: Shows comprehensive branch status table
 - ⚡ **Interactive Spinner**: Real-time progress updates with an animated spinner
-- 🛡️ **Comprehensive Testing**: 100% test coverage for statements, branches, functions, and lines with 168 test cases
+- 🛡️ **Comprehensive Testing**: 100% test coverage for statements, branches, functions, and lines
 - 🎯 **Code Quality**: ESLint and Prettier for consistent code style
 - 🧠 **Smart UX**: Focused modes - main mode for PR cleanup, untracked mode for local cleanup
 
@@ -51,6 +54,8 @@ Before installing, make sure you have:
 - **Git** installed and configured
 - **GitHub CLI** (`gh`) installed and authenticated (only required for main mode, not for `--untracked-only`)
 - Active internet connection for GitHub API calls (only required for main mode)
+
+For local development, this project uses **Yarn 1.x** (via Corepack) and pins Node **20.19.0** via [`.mise.toml`](.mise.toml) and [`.nvmrc`](.nvmrc).
 
 ### Installing GitHub CLI
 
@@ -95,22 +100,43 @@ npm install -g git-cleanup-merged
 npm install -g https://github.com/ondro/git-cleanup-merged.git
 ```
 
-### Option 2: Local Installation
+### Option 1b: Global Installation via mise
+
+If you use [mise](https://mise.jdx.dev) to manage Node versions, prefer installing the CLI as a mise npm tool instead of `npm install -g`. Global npm installs are tied to whichever Node version is active, so they break when mise switches versions per directory (for example, when `.nvmrc` or `.mise.toml` pins a different Node in a project).
+
+```bash
+# Install globally without changing your global Node version
+mise use -g npm:git-cleanup-merged@latest
+mise install
+mise reshim
+
+# Verify
+git-cleanup-merged --help
+```
+
+The CLI stays available regardless of which Node version mise activates in the current directory.
+
+### Option 2: Local Installation (Development)
 
 ```bash
 # Clone the repository
 git clone https://github.com/ondro/git-cleanup-merged.git
 cd git-cleanup-merged
 
-# Install dependencies
-npm install
+# Install the pinned Node version (if using mise)
+mise install
 
-# Make executable (Unix/macOS/Linux)
-chmod +x index.js
+# Install dependencies (this project uses Yarn via Corepack)
+corepack enable
+yarn install --frozen-lockfile
 
-# Create symlink for global access (optional)
-npm link
+# Run locally
+yarn exec git-cleanup-merged -- --help
 ```
+
+This project pins Node 20.19.0 via [`.mise.toml`](.mise.toml) and [`.nvmrc`](.nvmrc). With mise, run `mise install` in the repo to install that version automatically. Without mise, use any Node.js 18+ version.
+
+Avoid `npm install` in this repo — [`package.json`](package.json) declares Yarn as the package manager. Avoid `npm link` when using mise; it has the same per-Node-version issues as `npm install -g`.
 
 ### Option 3: Direct Download
 
@@ -350,26 +376,46 @@ git-cleanup-merged -u -v -n
 
 ## Development
 
+### Development Setup
+
+```bash
+git clone https://github.com/ondro/git-cleanup-merged.git
+cd git-cleanup-merged
+
+# Optional: install pinned Node version with mise
+mise install
+
+# Enable Yarn via Corepack and install dependencies
+corepack enable
+yarn install --frozen-lockfile
+```
+
+CI runs the same install command and executes `yarn lint`, `yarn test`, and `yarn test:coverage:ci` on Node.js 18.x and 20.x.
+
 ### Project Structure
 
 ```
 git-cleanup-merged/
+├── .github/workflows/      # CI and publish workflows (Yarn)
 ├── __tests__/              # Test files
 │   ├── index.test.js       # Main functionality tests
 │   ├── spinner.test.js     # Spinner component tests
 │   └── utils.test.js       # Utility function tests
 ├── coverage/               # Coverage reports (generated)
-
+├── scripts/
+│   └── fix-junit.js        # Post-process JUnit output for CI
 ├── src/
 │   ├── bin.js              # CLI entry point
 │   ├── index.js            # Main GitCleanupTool class
 │   └── utils/
 │       ├── index.js        # Utility functions
 │       └── spinner.js      # Spinner component
+├── .mise.toml              # Node version pin for mise
+├── .nvmrc                  # Node version pin for nvm/fnm/mise
 ├── package.json
-├── package-lock.json
-├── eslint.config.mjs      # ESLint configuration
-├── .prettierrc            # Prettier configuration
+├── yarn.lock
+├── eslint.config.mjs       # ESLint configuration
+├── .prettierrc             # Prettier configuration
 └── README.md
 ```
 
@@ -384,27 +430,41 @@ git-cleanup-merged/
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Test thoroughly with both `--dry-run` and actual deletion
-5. Submit a pull request
+3. Set up the development environment (see [Development Setup](#development-setup))
+4. Make your changes
+5. Run lint and tests before submitting:
+   ```bash
+   yarn lint
+   yarn test
+   yarn test:coverage:ci
+   ```
+6. Test thoroughly with both `--dry-run` and actual deletion
+7. Submit a pull request
 
 ### Running Tests
 
 ```bash
+# Install dependencies (first time or after lockfile changes)
+corepack enable
+yarn install --frozen-lockfile
+
 # Run all tests
-npm test
+yarn test
 
 # Run tests with coverage
-npm run test:coverage
+yarn test:coverage
+
+# Run tests with coverage and CI JUnit output (same as CI)
+yarn test:coverage:ci
 
 # Run linting
-npm run lint
+yarn lint
 
 # Run linting with auto-fix
-npm run lint -- --fix
+yarn lint -- --fix
 
 # Format code
-npm run format
+yarn format
 ```
 
 ## License
